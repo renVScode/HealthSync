@@ -1,0 +1,40 @@
+# ── .NET ──────────────────────────────────────────────
+bin/
+obj/
+*.user
+*.suo
+*.sln.docstates
+*.userprefs
+*.DotSettings.user
+.vs/
+*.csproj.user
+
+# ── Frontend (Node / Bun) ────────────────────────────
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+.next/
+
+# ── Environment & Secrets ────────────────────────────
+.env
+.env.local
+.env.*.local
+*.pfx
+*.p12
+
+# ── OS ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+
+# ── IDE ───────────────────────────────────────────────
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# ── Docker ────────────────────────────────────────────
+docker-compose.override.yml
+
+# ── Experimental Files ────────────────────────────────────────────
+guidedoc/
