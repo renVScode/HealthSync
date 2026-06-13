@@ -39,6 +39,15 @@ public class DoctorPerformanceDto
     public decimal RevenueGenerated { get; set; }
 }
 
+public class InventorySummaryDto
+{
+    public int TotalMedicines { get; set; }
+    public int TotalBatches { get; set; }
+    public decimal TotalStockValue { get; set; }
+    public int LowStockCount { get; set; }
+    public int ExpiringCount { get; set; }
+}
+
 public class PatientVisitDto
 {
     public Guid PatientId { get; set; }

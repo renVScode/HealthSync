@@ -1,0 +1,11 @@
+using HealthSync.Core.Entities;
+
+namespace HealthSync.Core.Interfaces.Services;
+
+public interface IAuditService
+{
+    Task LogAsync(string action, string entityType, Guid? entityId, string? oldValues,
+        string? newValues, string? userId,
+        string? ipAddress, string? userAgent);
+    Task<IEnumerable<AuditLog>> GetLogsAsync(string? entityType, Guid? entityId, DateTime? from, DateTime? to);
+}

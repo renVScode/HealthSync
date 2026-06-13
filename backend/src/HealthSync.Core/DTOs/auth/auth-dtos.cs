@@ -43,7 +43,7 @@ public class AuthResultDto
     public bool Success { get; set; }
     public string? ErrorMessage { get; set; }
     public string? AccessToken { get; set; }
-    public string? RefreshsToken { get; set; }
+    public string? RefreshToken { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public UserInfoDto? User { get; set; }
     public string? UserId { get; set; }

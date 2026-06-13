@@ -45,7 +45,7 @@ public class AppointmentFilterDto
     public Guid? PatientId { get; set; }
     public Guid? DoctorId { get; set; }
     public AppointmentStatus? Status { get; set; }
-    public DateTime? DateForm { get; set; }
+    public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 20;
@@ -61,4 +61,12 @@ public class CalendarEventDto
     public AppointmentStatus Status { get; set; }
     public Guid PatientId { get; set; }
     public Guid DoctorId { get; set; }
+}
+
+public class PaginatedResult<T>
+{
+    public List<T> Items { get; set; } = [];
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
 }

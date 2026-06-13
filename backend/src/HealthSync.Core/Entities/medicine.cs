@@ -5,7 +5,7 @@ public class Medicine
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty; // brand name
     public string? GenericName { get; set; } // generic / active ingredient
-    public string? Categtory { get; set; } // e.g. antibiotic, analgesic, etc.
+    public string? Category { get; set; } // e.g. antibiotic, analgesic, etc.
     public string? Manufacturer { get; set; }
     public string Unit { get; set; } = string.Empty; // tablet, vial, capsult. etc.``
     public decimal Price { get; set; }

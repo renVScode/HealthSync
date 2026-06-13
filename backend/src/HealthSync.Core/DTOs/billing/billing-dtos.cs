@@ -70,8 +70,16 @@ public class BillingFilterDto
 {
     public Guid? PatientId { get; set; }
     public BillingStatus? Status { get; set; }
-    public DateTime? DateForm { get; set; }
+    public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 20;
+}
+
+public class PaginatedResult<T>
+{
+    public List<T> Items { get; set; } = [];
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
 }
