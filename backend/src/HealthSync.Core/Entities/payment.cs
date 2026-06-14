@@ -15,5 +15,5 @@ public class Payment
 
     // navigation
     public Billing Billing { get; set; } = null!;
-    public Identity.ApplicationUser Receivedby { get; set; } = null!;
+    public Identity.ApplicationUser ReceivedBy { get; set; } = null!;
 }
