@@ -1,10 +1,14 @@
 using HealthSync.Core.Entities;
+using HealthSync.Core.Entities.Identity;
 
 namespace HealthSync.Core.Interfaces;
 
 public interface IUnitOfWork : IDisposable
 {
+    IRepository<ApplicationUser> Users { get; }
     IRepository<Patient> Patients { get; }
+
+
     IRepository<Doctor> Doctors { get; }
     IRepository<DoctorAvailability> DoctorAvailabilities { get; }
     IRepository<TimeOff> TimeOffs { get; }

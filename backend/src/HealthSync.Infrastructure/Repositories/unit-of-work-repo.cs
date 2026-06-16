@@ -1,4 +1,5 @@
 using HealthSync.Core.Entities;
+using HealthSync.Core.Entities.Identity;
 using HealthSync.Core.Interfaces;
 using HealthSync.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -15,7 +16,10 @@ public class UnitOfWork : IUnitOfWork
         _context = context;
     }
 
+    private IRepository<ApplicationUser>? _users;
     private IRepository<Patient>? _patients;
+
+    public IRepository<ApplicationUser> Users => _users ??= new GenericRepository<ApplicationUser>(_context);
     private IRepository<Doctor>? _doctors;
     private IRepository<DoctorAvailability>? _doctorAvailabilities;
     private IRepository<TimeOff>? _timeOffs;

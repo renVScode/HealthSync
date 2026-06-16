@@ -9,7 +9,7 @@ A full-stack clinic management platform built with Clean Architecture. Handles p
 | **Backend** | C# .NET 9, ASP.NET Core Web API |
 | **Architecture** | Clean Architecture (Api / Core / Infrastructure) |
 | **Database** | PostgreSQL, EF Core (Code-First, Fluent API) |
-| **Auth** | ASP.NET Core Identity + JWT Bearer tokens |
+| **Auth** | JWT Bearer tokens (password hashing via `PasswordHasher<T>`) |
 | **Real-time** | SignalR (appointment & notification hubs) |
 | **Frontend** | React 18, TypeScript, Vite |
 | **Package Manager** | Bun |
@@ -67,8 +67,8 @@ Patients ──1:M── Appointments ──1:0..1── MedicalRecords ──1:
 
 Medicines ──1:M── InventoryBatches ──1:M── InventoryTransactions
 
-AspNetUsers (Identity) ──1:0..1── Patients
-                       ──1:0..1── Doctors
+Users ──1:0..1── Patients
+Users ──1:0..1── Doctors
 ```
 *All entities use `Guid` primary keys with `gen_random_uuid()`.*
 
@@ -163,7 +163,7 @@ frontend/
 - **Enum-as-string storage**: Enums stored as varchar in PostgreSQL (via `HasConversion<string>()`) for readability over native PG enums.
 - **Guid primary keys**: Consistent UUIDs across all tables, generated client-side or via `gen_random_uuid()`.
 - **15-minute appointment slots**: Enforced at the service layer, with overlapping-slot validation against existing appointments and time-off records.
-- **JWT with refresh token rotation**: Short-lived access tokens (15 min) + long-lived refresh tokens (7 days) stored in the user table. Each refresh invalidates the previous token (rotation).
+- **JWT with refresh token rotation**: Short-lived access tokens (15 min) + long-lived refresh tokens (7 days) stored in the user table. Each refresh invalidates the previous token (rotation). Password hashing uses `PasswordHasher<T>` directly (no Identity framework).
 - **Nullable UserId on Patient**: Walk-in patients can be registered without requiring a portal login account.
 - **Port 5433 for Docker PostgreSQL**: Avoids conflict with local PostgreSQL on 5432 — both can run simultaneously.
 

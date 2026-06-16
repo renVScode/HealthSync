@@ -1,15 +1,14 @@
 using HealthSync.Core.Entities;
 using HealthSync.Core.Entities.Identity;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace HealthSync.Infrastructure.Data;
 
-public class ApplicationDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, Guid, IdentityUserClaim<Guid>, ApplicationUserRole, IdentityUserLogin<Guid>, IdentityRoleClaim<Guid>, IdentityUserToken<Guid>>
+public class ApplicationDbContext : DbContext
 {
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
+    public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
     public DbSet<Patient> Patients => Set<Patient>();
     public DbSet<Doctor> Doctors => Set<Doctor>();
     public DbSet<DoctorAvailability> DoctorAvailabilities => Set<DoctorAvailability>();
@@ -29,24 +28,22 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
     {
         base.OnModelCreating(builder);
 
-        // Identity table renaming
-        builder.Entity<ApplicationUser>(e => e.ToTable("AspNetUsers"));
-        builder.Entity<ApplicationRole>(e => e.ToTable("AspNetRoles"));
-        builder.Entity<ApplicationUserRole>(e => e.ToTable("AspNetUserRoles"));
-        builder.Entity<IdentityUserClaim<Guid>>(e => e.ToTable("AspNetUserClaims"));
-        builder.Entity<IdentityRoleClaim<Guid>>(e => e.ToTable("AspNetRoleClaims"));
-        builder.Entity<IdentityUserLogin<Guid>>(e => e.ToTable("AspNetUserLogins"));
-        builder.Entity<IdentityUserToken<Guid>>(e => e.ToTable("AspNetUserTokens"));
-
         // User
         builder.Entity<ApplicationUser>(entity =>
         {
+            entity.HasKey(u => u.Id);
+            entity.Property(u => u.UserName).HasMaxLength(256).IsRequired();
+            entity.Property(u => u.Email).HasMaxLength(256);
+            entity.Property(u => u.PasswordHash);
+            entity.Property(u => u.PhoneNumber).HasMaxLength(20);
             entity.Property(u => u.FirstName).HasMaxLength(100).IsRequired();
             entity.Property(u => u.LastName).HasMaxLength(100).IsRequired();
             entity.Property(u => u.Role).HasConversion<string>().HasMaxLength(20).IsRequired();
             entity.Property(u => u.RefreshToken).HasMaxLength(500);
+            entity.HasIndex(u => u.UserName).IsUnique();
             entity.HasIndex(u => u.Role);
             entity.HasIndex(u => u.IsActive);
+            entity.HasIndex(u => u.Email);
         });
 
         // Patient
@@ -56,7 +53,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, Applicati
             entity.Property(p => p.LastName).HasMaxLength(100).IsRequired();
             entity.Property(p => p.Gender).HasMaxLength(10).IsRequired();
             entity.Property(p => p.Phone).HasMaxLength(20).IsRequired();
-            entity.Property(p => p.Email).HasMaxLength(25);
+            entity.Property(p => p.Email).HasMaxLength(255);
             entity.Property(p => p.BloodType).HasMaxLength(5);
             entity.Property(p => p.EmergencyContact).HasMaxLength(100);
             entity.Property(p => p.EmergencyPhone).HasMaxLength(20);

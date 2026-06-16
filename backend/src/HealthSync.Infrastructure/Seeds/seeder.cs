@@ -9,19 +9,14 @@ namespace HealthSync.Infrastructure.Seeds;
 
 public static class DatabaseSeeder
 {
-    public static async Task SeedAsync(ApplicationDbContext context, UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager)
+    public static async Task SeedAsync(ApplicationDbContext context)
     {
         await context.Database.MigrateAsync();
 
-        // Seed roles
-        foreach (var roleName in Enum.GetNames<UserRole>())
-        {
-            if (!await roleManager.RoleExistsAsync(roleName))
-                await roleManager.CreateAsync(new ApplicationRole(roleName));
-        }
+        var hasher = new PasswordHasher<ApplicationUser>();
 
         // Seed admin user
-        if (await userManager.FindByNameAsync("admin") == null)
+        if (!await context.Users.AnyAsync(u => u.UserName == "admin"))
         {
             var admin = new ApplicationUser
             {
@@ -32,13 +27,12 @@ public static class DatabaseSeeder
                 Role = UserRole.Admin,
                 IsActive = true
             };
-            var result = await userManager.CreateAsync(admin, "Admin@123");
-            if (result.Succeeded)
-                await userManager.AddToRoleAsync(admin, UserRole.Admin.ToString());
+            admin.PasswordHash = hasher.HashPassword(admin, "Admin@123");
+            context.Users.Add(admin);
         }
 
         // Seed sample doctor
-        if (await userManager.FindByNameAsync("dr.smith") == null)
+        if (!await context.Users.AnyAsync(u => u.UserName == "dr.smith"))
         {
             var doctorUser = new ApplicationUser
             {
@@ -49,8 +43,11 @@ public static class DatabaseSeeder
                 Role = UserRole.Doctor,
                 IsActive = true
             };
-            await userManager.CreateAsync(doctorUser, "Doctor@123");
-            await userManager.AddToRoleAsync(doctorUser, UserRole.Doctor.ToString());
+            doctorUser.PasswordHash = hasher.HashPassword(doctorUser, "Doctor@123");
+            context.Users.Add(doctorUser);
+
+            // Need to save to get the user Id
+            await context.SaveChangesAsync();
 
             var doctor = await context.Doctors.FirstOrDefaultAsync(d => d.UserId == doctorUser.Id);
             if (doctor == null)
@@ -69,7 +66,7 @@ public static class DatabaseSeeder
         }
 
         // Seed sample receptionist
-        if (await userManager.FindByNameAsync("reception") == null)
+        if (!await context.Users.AnyAsync(u => u.UserName == "reception"))
         {
             var receptionist = new ApplicationUser
             {
@@ -80,12 +77,12 @@ public static class DatabaseSeeder
                 Role = UserRole.Receptionist,
                 IsActive = true
             };
-            await userManager.CreateAsync(receptionist, "Recept@123");
-            await userManager.AddToRoleAsync(receptionist, UserRole.Receptionist.ToString());
+            receptionist.PasswordHash = hasher.HashPassword(receptionist, "Recept@123");
+            context.Users.Add(receptionist);
         }
 
         // Seed sample pharmacist
-        if (await userManager.FindByNameAsync("pharmacist") == null)
+        if (!await context.Users.AnyAsync(u => u.UserName == "pharmacist"))
         {
             var pharmacist = new ApplicationUser
             {
@@ -96,8 +93,8 @@ public static class DatabaseSeeder
                 Role = UserRole.Pharmacist,
                 IsActive = true
             };
-            await userManager.CreateAsync(pharmacist, "Pharma@123");
-            await userManager.AddToRoleAsync(pharmacist, UserRole.Pharmacist.ToString());
+            pharmacist.PasswordHash = hasher.HashPassword(pharmacist, "Pharma@123");
+            context.Users.Add(pharmacist);
         }
 
         // Seed sample medicines

@@ -1,8 +1,6 @@
 using HealthSync.Infrastructure.Data;
 using HealthSync.Infrastructure.Seeds;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Identity;
-using HealthSync.Core.Entities.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -17,9 +15,7 @@ public static class ApplicationBuilderExtensions
         try
         {
             var context = services.GetRequiredService<ApplicationDbContext>();
-            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
-            var roleManager = services.GetRequiredService<RoleManager<ApplicationRole>>();
-            await DatabaseSeeder.SeedAsync(context, userManager, roleManager);
+            await DatabaseSeeder.SeedAsync(context);
         }
         catch (Exception ex)
         {

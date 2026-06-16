@@ -5,8 +5,10 @@ using System.Text;
 using HealthSync.Core.DTOs.Auth;
 using HealthSync.Core.Entities.Identity;
 using HealthSync.Core.Enums;
+using HealthSync.Core.Interfaces;
 using HealthSync.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -14,31 +16,38 @@ namespace HealthSync.Core.Services;
 
 public class AuthService : IAuthService
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly RoleManager<ApplicationRole> _roleManager;
+    private readonly IUnitOfWork _uow;
+    private readonly PasswordHasher<ApplicationUser> _passwordHasher;
     private readonly IConfiguration _configuration;
 
-    public AuthService(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IConfiguration configuration)
+    public AuthService(IUnitOfWork uow, PasswordHasher<ApplicationUser> passwordHasher, IConfiguration configuration)
     {
-        _userManager = userManager;
-        _roleManager = roleManager;
+        _uow = uow;
+        _passwordHasher = passwordHasher;
         _configuration = configuration;
     }
 
     public async Task<AuthResultDto> LoginAsync(LoginRequestDto request)
     {
-        var user = await _userManager.FindByNameAsync(request.Username);
+        var user = await _uow.Users.Query().FirstOrDefaultAsync(u => u.UserName == request.Username);
         if (user == null || !user.IsActive)
             return new AuthResultDto { Success = false, ErrorMessage = "Invalid credentials" };
 
-        if (!await _userManager.CheckPasswordAsync(user, request.Password))
+        var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash ?? string.Empty, request.Password);
+        if (result == PasswordVerificationResult.Failed)
             return new AuthResultDto { Success = false, ErrorMessage = "Invalid credentials" };
 
-        var token = await GenerateJwtTokenAsync(user);
+        if (result == PasswordVerificationResult.SuccessRehashNeeded)
+        {
+            user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+            await _uow.Users.UpdateAsync(user);
+        }
+
+        var token = GenerateJwtToken(user);
         var refreshToken = GenerateRefreshToken();
         user.RefreshToken = refreshToken;
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
-        await _userManager.UpdateAsync(user);
+        await _uow.SaveChangesAsync();
 
         return new AuthResultDto
         {
@@ -55,7 +64,12 @@ public class AuthService : IAuthService
         if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
             return new AuthResultDto { Success = false, ErrorMessage = "Invalid role" };
 
-        var existingUser = await _userManager.FindByNameAsync(request.Username);
+        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
+            return new AuthResultDto { Success = false, ErrorMessage = "Password must be at least 6 characters" };
+        if (!request.Password.Any(char.IsDigit))
+            return new AuthResultDto { Success = false, ErrorMessage = "Password must contain at least one digit" };
+
+        var existingUser = await _uow.Users.Query().FirstOrDefaultAsync(u => u.UserName == request.Username);
         if (existingUser != null)
             return new AuthResultDto { Success = false, ErrorMessage = "Username already exists" };
 
@@ -70,29 +84,24 @@ public class AuthService : IAuthService
             IsActive = true
         };
 
-        var result = await _userManager.CreateAsync(user, request.Password);
-        if (!result.Succeeded)
-            return new AuthResultDto { Success = false, ErrorMessage = string.Join(", ", result.Errors.Select(e => e.Description)) };
-
-        var roleName = role.ToString();
-        if (!await _roleManager.RoleExistsAsync(roleName))
-            await _roleManager.CreateAsync(new ApplicationRole(roleName));
-        await _userManager.AddToRoleAsync(user, roleName);
+        user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+        await _uow.Users.AddAsync(user);
+        await _uow.SaveChangesAsync();
 
         return new AuthResultDto { Success = true, UserId = user.Id.ToString() };
     }
 
     public async Task<AuthResultDto> RefreshTokenAsync(string refreshToken)
     {
-        var user = _userManager.Users.FirstOrDefault(u => u.RefreshToken == refreshToken);
+        var user = await _uow.Users.Query().FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
         if (user == null || user.RefreshTokenExpiry < DateTime.UtcNow || !user.IsActive)
             return new AuthResultDto { Success = false, ErrorMessage = "Invalid or expired refresh token" };
 
-        var token = await GenerateJwtTokenAsync(user);
+        var token = GenerateJwtToken(user);
         var newRefreshToken = GenerateRefreshToken();
         user.RefreshToken = newRefreshToken;
         user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
-        await _userManager.UpdateAsync(user);
+        await _uow.SaveChangesAsync();
 
         return new AuthResultDto
         {
@@ -106,33 +115,30 @@ public class AuthService : IAuthService
 
     public async Task RevokeRefreshTokenAsync(string userId)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await _uow.Users.GetByIdAsync(Guid.Parse(userId));
         if (user != null)
         {
             user.RefreshToken = null;
             user.RefreshTokenExpiry = null;
-            await _userManager.UpdateAsync(user);
+            await _uow.SaveChangesAsync();
         }
     }
 
     public async Task<UserInfoDto?> GetUserByIdAsync(string userId)
     {
-        var user = await _userManager.FindByIdAsync(userId);
+        var user = await _uow.Users.GetByIdAsync(Guid.Parse(userId));
         return user == null ? null : MapToUserInfo(user);
     }
 
     public async Task<List<UserInfoDto>> GetAllUsersAsync()
     {
-        var users = _userManager.Users.ToList();
-        var result = new List<UserInfoDto>();
-        foreach (var user in users)
-            result.Add(MapToUserInfo(user));
-        return result;
+        var users = await _uow.Users.GetAllAsync();
+        return users.Select(MapToUserInfo).ToList();
     }
 
     public async Task<bool> UpdateUserAsync(Guid id, UpdateUserDto dto)
     {
-        var user = await _userManager.FindByIdAsync(id.ToString());
+        var user = await _uow.Users.GetByIdAsync(id);
         if (user == null) return false;
 
         if (dto.FirstName != null) user.FirstName = dto.FirstName;
@@ -143,26 +149,25 @@ public class AuthService : IAuthService
             user.Role = role;
 
         user.UpdatedAt = DateTime.UtcNow;
-        await _userManager.UpdateAsync(user);
+        await _uow.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> ToggleActivationAsync(Guid id, bool isActive)
     {
-        var user = await _userManager.FindByIdAsync(id.ToString());
+        var user = await _uow.Users.GetByIdAsync(id);
         if (user == null) return false;
 
         user.IsActive = isActive;
         user.UpdatedAt = DateTime.UtcNow;
-        await _userManager.UpdateAsync(user);
+        await _uow.SaveChangesAsync();
         return true;
     }
 
-    private async Task<string> GenerateJwtTokenAsync(ApplicationUser user)
+    private string GenerateJwtToken(ApplicationUser user)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        var roles = await _userManager.GetRolesAsync(user);
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
