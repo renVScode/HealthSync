@@ -1,0 +1,39 @@
+services:
+  database:
+    image: postgres:15
+    container_name: healthsync_db
+    environment:
+      POSTGRES_DB: healthsyncdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: postgres4healthsync
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d healthsyncdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: src/HealthSync.Api/Dockerfile
+    container_name: healthsync_api
+    ports:
+      - "5000:5000"
+    environment:
+      - ConnectionStrings__Default=Host=localhost;Port=5432;Database=healthsyncdb;Username=postgres;Password=ren@postgres
+      - Jwt__Key=ThisIsASecureKeyForHealthSync2026Project!
+      - Jwt_Issuer=HealthSync
+      - Jwt__Audience=HealthSyncApp
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:5000
+    depends_on:
+      database:
+        condition: service_healthy
+      restart: unless_stopped
+
+volumes:
+  pgdata:
