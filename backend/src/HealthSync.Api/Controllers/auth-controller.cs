@@ -21,6 +21,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {
         var result = await _authService.LoginAsync(request);
+        var userInfo = result.User!;
         if (!result.Success)
             return Unauthorized(new { message = result.ErrorMessage });
 
@@ -29,7 +30,7 @@ public class AuthController : ControllerBase
             accessToken = result.AccessToken,
             refreshToken = result.RefreshToken,
             expiresAt = result.ExpiresAt,
-            user = new { result.User.Id, result.User.FirstName, result.User.LastName, result.User.Email, result.User.Role }
+            user = new { userInfo.Id, userInfo.FirstName, userInfo.LastName, userInfo.Email, userInfo.Role }
         });
     }
 

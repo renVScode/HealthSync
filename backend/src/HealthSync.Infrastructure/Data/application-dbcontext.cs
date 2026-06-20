@@ -57,7 +57,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(p => p.BloodType).HasMaxLength(5);
             entity.Property(p => p.EmergencyContact).HasMaxLength(100);
             entity.Property(p => p.EmergencyPhone).HasMaxLength(20);
-            entity.HasOne(p => p.User).WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(p => p.User).WithOne(u => u.Patient).HasForeignKey<Patient>(p => p.UserId).OnDelete(DeleteBehavior.SetNull);
             entity.HasIndex(p => new { p.LastName, p.FirstName });
         });
 
@@ -113,7 +113,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(p => p.Frequency).HasMaxLength(100).IsRequired();
             entity.Property(p => p.Duration).HasMaxLength(100);
             entity.HasOne(p => p.MedicalRecord).WithMany(r => r.Prescriptions).HasForeignKey(p => p.MedicalRecordId);
-            entity.HasOne(p => p.Medicine).WithMany().HasForeignKey(p => p.MedicineId);
+            entity.HasOne(p => p.Medicine).WithMany(m => m.Prescriptions).HasForeignKey(p => p.MedicineId);
         });
 
         // Medicine
@@ -146,7 +146,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(t => t.TransactionType).HasConversion<string>().HasMaxLength(20).IsRequired();
             entity.Property(t => t.ReferenceType).HasMaxLength(50);
             entity.HasOne(t => t.InventoryBatch).WithMany(b => b.Transactions).HasForeignKey(t => t.InventoryBatchId);
-            entity.HasOne(t => t.CreatedBy).WithMany().HasForeignKey(t => t.CreatedById).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(t => t.CreatedBy).WithMany(u => u.InventoryTransactions).HasForeignKey(t => t.CreatedById).OnDelete(DeleteBehavior.NoAction);
         });
 
         // Billing
@@ -191,7 +191,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(l => l.Action).HasMaxLength(100).IsRequired();
             entity.Property(l => l.EntityType).HasMaxLength(100).IsRequired();
             entity.Property(l => l.IpAddress).HasMaxLength(50);
-            entity.HasOne(l => l.User).WithMany().HasForeignKey(l => l.UserId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(l => l.User).WithMany(u => u.AuditLogs).HasForeignKey(l => l.UserId).OnDelete(DeleteBehavior.SetNull);
             entity.HasIndex(l => new { l.EntityType, l.EntityId });
         });
     }

@@ -4,6 +4,8 @@ using HealthSync.Api.Middleware;
 using HealthSync.Core.Entities.Identity;
 using HealthSync.Infrastructure.Data;
 using HealthSync.Api.Extensions;
+using HealthSync.Api.Services;
+using HealthSync.Core.Interfaces.Services;
 using HealthSync.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -69,6 +71,7 @@ builder.Services.AddSignalR();
 
 // Application services
 builder.Services.AddApplicationServices();
+builder.Services.AddScoped<IAppointmentNotificationService, SignalRNotificationService>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddControllers();
