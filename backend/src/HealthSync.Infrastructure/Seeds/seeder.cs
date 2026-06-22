@@ -9,11 +9,9 @@ namespace HealthSync.Infrastructure.Seeds;
 
 public static class DatabaseSeeder
 {
-    public static async Task SeedAsync(ApplicationDbContext context)
+    public static async Task SeedAsync(ApplicationDbContext context, PasswordHasher<ApplicationUser> hasher)
     {
         await context.Database.MigrateAsync();
-
-        var hasher = new PasswordHasher<ApplicationUser>();
 
         // Seed admin user
         if (!await context.Users.AnyAsync(u => u.UserName == "admin"))

@@ -24,7 +24,7 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - ConnectionStrings__Default=Host=localhost;Port=5432;Database=healthsyncdb;Username=postgres;Password=ren@postgres
+      - ConnectionStrings__Default=Host=database;Port=5432;Database=healthsyncdb;Username=admin;Password=postgres4healthsync
       - Jwt__Key=ThisIsASecureKeyForHealthSync2026Project!
       - Jwt_Issuer=HealthSync
       - Jwt__Audience=HealthSyncApp
@@ -33,7 +33,19 @@ services:
     depends_on:
       database:
         condition: service_healthy
-      restart: unless_stopped
+    restart: unless-stopped
+
+  frontend:
+    image: oven/bun:1
+    ports:
+      - "3000:3000"
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: sh -c "bun install && bun run dev -- --host"
+    depends_on:
+      - backend
 
 volumes:
   pgdata:

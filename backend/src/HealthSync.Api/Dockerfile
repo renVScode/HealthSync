@@ -4,7 +4,7 @@ WORKDIR /src
 COPY HealthSync.sln ./
 COPY src/HealthSync.Api/*.csproj ./src/HealthSync.Api/
 COPY src/HealthSync.Core/*.csproj ./src/HealthSync.Core/
-COPY src/HealthSync.Infrastructure/*.csproj ./src/HealthSync.Infrastructure
+COPY src/HealthSync.Infrastructure/*.csproj ./src/HealthSync.Infrastructure/
 RUN dotnet restore
 
 COPY . .

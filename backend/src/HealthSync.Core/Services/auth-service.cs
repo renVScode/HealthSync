@@ -29,7 +29,7 @@ public class AuthService : IAuthService
 
     public async Task<AuthResultDto> LoginAsync(LoginRequestDto request)
     {
-        var user = await _uow.Users.Query().FirstOrDefaultAsync(u => u.UserName == request.Username);
+        var user = await _uow.Users.Query().FirstOrDefaultAsync(u => u.UserName!.ToLower() == request.Username.ToLower());
         if (user == null || !user.IsActive)
             return new AuthResultDto { Success = false, ErrorMessage = "Invalid credentials" };
 
