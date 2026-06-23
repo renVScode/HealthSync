@@ -1,7 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { MainLayout } from './components/layout/MainLayout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { useAuth } from './contexts/auth-context';
+import { LoadingSpinner } from './components/common/LoadingSpinner';
 import { Login } from './pages/Login';
+import { Landing } from './pages/Landing';
 import { Dashboard } from './pages/Dashboard';
 import { Patients } from './pages/Patients';
 import { PatientDetail } from './pages/PatientDetail';
@@ -17,13 +20,15 @@ import { Settings } from './pages/Settings';
 import { NotFound } from './pages/NotFound';
 
 export function AppRoutes() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return <LoadingSpinner />;
+
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/" element={
-        <ProtectedRoute><MainLayout /></ProtectedRoute>
-      }>
-        <Route index element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Landing />} />
+      <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
+      <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="patients" element={<ProtectedRoute roles={['Admin', 'Doctor', 'Receptionist']}><Patients /></ProtectedRoute>} />
         <Route path="patients/:id" element={<ProtectedRoute roles={['Admin', 'Doctor', 'Receptionist']}><PatientDetail /></ProtectedRoute>} />
