@@ -5,10 +5,12 @@ import { Button } from '../components/common/Button';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { PatientForm } from '../components/domain-components';
 import { patientService } from '../services/patientService';
+import { useAuth } from '../contexts/auth-context';
 import { formatDate, getAge } from '../utils/formatters';
 
 export function PatientDetail() {
   const { id } = useParams<{ id: string }>();
+  const { hasRole } = useAuth();
   const [patient, setPatient] = useState<any>(null);
   const [editing, setEditing] = useState(false);
 
@@ -21,9 +23,10 @@ export function PatientDetail() {
   return (
     <div className="space-y-6">
       <Card title="Patient Information" actions={
+        hasRole('Receptionist') && (
         <Button onClick={() => setEditing(!editing)}>
           {editing ? 'Cancel' : 'Edit'}
-        </Button>
+        </Button>)
       }>
         {editing ? (
           <PatientForm initial={patient} onSubmit={async (data) => {

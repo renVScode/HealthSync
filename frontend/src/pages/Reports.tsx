@@ -5,15 +5,29 @@ import { ReportFilters } from '../components/domain-components';
 import { ReportChart } from '../components/domain-components';
 import { reportService } from '../services/reportService';
 import { printHtml } from '../utils/printUtils';
+import { formatCurrency } from '../utils/formatters';
 
 export function Reports() {
   const [appointmentData, setAppointmentData] = useState<any>(null);
+  const [revenueData, setRevenueData] = useState<any>(null);
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [error, setError] = useState('');
 
   const loadReport = async (from: string, to: string) => {
     setDateRange({ from, to });
-    const res = await reportService.getAppointmentSummary(from, to);
-    setAppointmentData(res.data);
+    setError('');
+    try {
+      const [apptRes, revRes] = await Promise.all([
+        reportService.getAppointmentSummary(from, to),
+        reportService.getRevenue(from, to),
+      ]);
+      setAppointmentData(apptRes.data);
+      setRevenueData(revRes.data);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Failed to load report');
+      setAppointmentData(null);
+      setRevenueData(null);
+    }
   };
 
   const chartData = appointmentData ? [
@@ -33,6 +47,34 @@ export function Reports() {
       <span style="width:50px;text-align:right;font-size:13px;">${d.value}</span>
     </div>`
   ).join('');
+
+  const revenueCards = revenueData ? [
+    { label: 'Total Revenue', value: formatCurrency(revenueData.totalRevenue) },
+    { label: 'Total Tax', value: formatCurrency(revenueData.totalTax) },
+    { label: 'Total Discount', value: formatCurrency(revenueData.totalDiscount) },
+    { label: 'Invoices', value: revenueData.invoiceCount },
+    { label: 'Paid', value: revenueData.paidCount },
+    { label: 'Pending', value: revenueData.pendingCount },
+  ] : [];
+
+  const revenueHtml = revenueData ? `
+    <h2 style="margin-top:24px;">Revenue Summary</h2>
+    <hr />
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px;">
+      <div style="text-align:center;padding:16px;background:#F8F9FA;border-radius:8px;">
+        <div style="font-size:11px;color:#6C757D;text-transform:uppercase;">Total Revenue</div>
+        <div style="font-size:24px;font-weight:bold;">${formatCurrency(revenueData.totalRevenue)}</div>
+      </div>
+      <div style="text-align:center;padding:16px;background:#F8F9FA;border-radius:8px;">
+        <div style="font-size:11px;color:#6C757D;text-transform:uppercase;">Paid Invoices</div>
+        <div style="font-size:24px;font-weight:bold;">${revenueData.paidCount}</div>
+      </div>
+      <div style="text-align:center;padding:16px;background:#F8F9FA;border-radius:8px;">
+        <div style="font-size:11px;color:#6C757D;text-transform:uppercase;">Pending</div>
+        <div style="font-size:24px;font-weight:bold;">${revenueData.pendingCount}</div>
+      </div>
+    </div>
+  ` : '';
 
   return (
     <div className="space-y-6">
@@ -61,6 +103,7 @@ export function Reports() {
               <div style="font-size:24px;font-weight:bold;">${appointmentData.noShow}</div>
             </div>
           </div>
+          ${revenueHtml}
         `);
         }}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -69,8 +112,23 @@ export function Reports() {
             Print
           </Button> : undefined}>
         <ReportFilters onFilter={loadReport} />
+        {error && <div className="text-sm text-[#DC3545] bg-[#F8D7DA] p-3 rounded mb-4">{error}</div>}
         {appointmentData && <ReportChart data={chartData} />}
+        {!appointmentData && !error && <p className="text-sm text-[#6C757D] py-8 text-center">Click "Apply" to load the report for the selected date range</p>}
       </Card>
+
+      {revenueData && (
+        <Card title="Revenue Summary">
+          <div className="grid grid-cols-3 gap-4">
+            {revenueCards.map((item) => (
+              <div key={item.label} className="text-center p-4 bg-[#F8F9FA] rounded-lg">
+                <div className="text-xs text-[#6C757D] uppercase tracking-wider">{item.label}</div>
+                <div className="text-xl font-bold text-[#212529] mt-1">{item.value}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

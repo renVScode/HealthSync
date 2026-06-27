@@ -24,7 +24,7 @@ export function Patients() {
   const [doctorId, setDoctorId] = useState<string | null>(null);
   const debouncedSearch = useDebounce(search);
 
-  const canEdit = hasRole('Admin', 'Receptionist');
+  const canEdit = hasRole('Receptionist');
   const isDoctor = user?.role === 'Doctor';
 
   useEffect(() => {

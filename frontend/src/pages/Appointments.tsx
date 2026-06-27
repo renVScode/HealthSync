@@ -6,10 +6,12 @@ import { AppointmentCalendar } from '../components/appointments/AppointmentCalen
 import { AppointmentForm } from '../components/appointments/AppointmentForm';
 import { appointmentService } from '../services/appointmentService';
 import { patientService } from '../services/patientService';
+import { useAuth } from '../contexts/auth-context';
 import { doctorService } from '../services/doctorService';
 import type { CalendarEvent, Patient, Doctor } from '../types';
 
 export function Appointments() {
+  const { hasRole } = useAuth();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -32,7 +34,7 @@ export function Appointments() {
   return (
     <div>
       <Card title="Appointments" actions={
-        <Button onClick={() => setShowModal(true)}>+ New Appointment</Button>
+        hasRole('Doctor', 'Receptionist') && <Button onClick={() => setShowModal(true)}>+ New Appointment</Button>
       }>
         <AppointmentCalendar
           events={events}

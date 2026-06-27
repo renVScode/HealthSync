@@ -68,7 +68,9 @@ public class InventoryController : ControllerBase
     [Authorize(Roles = "Admin,Pharmacist")]
     public async Task<IActionResult> GetTransactions([FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
-        var transactions = await _inventoryService.GetTransactionsAsync(from, to);
+        var utcFrom = from.HasValue ? (DateTime?)DateTime.SpecifyKind(from.Value, DateTimeKind.Utc) : null;
+        var utcTo = to.HasValue ? (DateTime?)DateTime.SpecifyKind(to.Value, DateTimeKind.Utc) : null;
+        var transactions = await _inventoryService.GetTransactionsAsync(utcFrom, utcTo);
         return Ok(transactions);
     }
 }

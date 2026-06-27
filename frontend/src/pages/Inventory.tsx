@@ -6,10 +6,12 @@ import { SearchBar } from '../components/common/SearchBar';
 import { StockAlertBadge } from '../components/domain-components';
 import { inventoryService } from '../services/inventoryService';
 import { useDebounce } from '../hooks/useDebounce';
+import { useAuth } from '../contexts/auth-context';
 import { formatCurrency } from '../utils/formatters';
 import { PAGE_SIZE } from '../utils/constants';
 
 export function Inventory() {
+  const { hasRole } = useAuth();
   const [batches, setBatches] = useState<any[]>([]);
   const [lowStock, setLowStock] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -60,7 +62,7 @@ export function Inventory() {
         </Card>
       )}
       <Card title="Inventory Batches" actions={
-        <Button>+ Add Stock</Button>
+        hasRole('Pharmacist') && <Button>+ Add Stock</Button>
       }>
         <div className="mb-4">
           <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by medicine name, batch, or supplier..." />

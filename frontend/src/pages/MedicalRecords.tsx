@@ -23,6 +23,9 @@ export function MedicalRecords() {
   const [records, setRecords] = useState<any[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewRecords, setViewRecords] = useState<any[]>([]);
+  const [viewPatientName, setViewPatientName] = useState('');
   const [medicines, setMedicines] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const debouncedSearch = useDebounce(patientSearch);
@@ -53,7 +56,16 @@ export function MedicalRecords() {
     }
   }, [selectedPatient]);
 
-  const canCreate = hasRole('Admin', 'Doctor');
+  const canCreate = hasRole('Doctor');
+  const isAdmin = hasRole('Admin');
+
+  const openViewModal = async (patient: any) => {
+    setSelectedPatient(patient);
+    setViewPatientName(`${patient.firstName} ${patient.lastName}`);
+    const res = await medicalRecordService.getByPatient(patient.id);
+    setViewRecords(Array.isArray(res.data) ? res.data : []);
+    setShowViewModal(true);
+  };
 
   const openCreateModal = async (patient: any) => {
     setSelectedPatient(patient);
@@ -123,31 +135,10 @@ export function MedicalRecords() {
             page={patientPage}
             totalPages={Math.ceil(patientTotal / PAGE_SIZE)}
             onPageChange={setPatientPage}
-            onRowClick={(p) => openCreateModal(p)}
+            onRowClick={(p) => isAdmin ? openViewModal(p) : canCreate ? openCreateModal(p) : setSelectedPatient(p)}
           />
         </div>
       </Card>
-
-      {selectedPatient && (
-        <Card title={`Medical Records - ${selectedPatient.firstName} ${selectedPatient.lastName}`}
-          actions={canCreate && <Button size="sm" onClick={() => openCreateModal(selectedPatient)}>+ New Record</Button>}
-        >
-          {records.length === 0 ? (
-            <p className="text-sm text-[#6C757D] py-4 text-center">No medical records for this patient</p>
-          ) : (
-            <DataTable
-              columns={[
-                { key: 'diagnosis', header: 'Diagnosis' },
-                { key: 'doctorName', header: 'Doctor' },
-                { key: 'createdAt', header: 'Date', render: (r: any) => formatDate(r.createdAt) },
-                { key: 'isConfidential', header: 'Confidential', render: (r: any) => r.isConfidential ? 'Yes' : 'No' },
-              ]}
-              data={records}
-              onRowClick={(r) => setSelectedRecord(r)}
-            />
-          )}
-        </Card>
-      )}
 
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="New Medical Record" size="lg"
         footer={
@@ -222,14 +213,62 @@ export function MedicalRecords() {
         </div>
       </Modal>
 
+      <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} title={`Medical Records - ${viewPatientName}`} size="lg"
+        footer={<Button size="sm" variant="secondary" onClick={() => setShowViewModal(false)}>Close</Button>}
+      >
+        {viewRecords.length === 0 ? (
+          <p className="text-sm text-[#6C757D] py-4 text-center">No medical records found for this patient</p>
+        ) : (
+          <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-1">
+            {viewRecords.map((record, idx) => (
+              <div key={record.id} className="border border-[#E9ECEF] rounded-lg p-4 space-y-3">
+                <div className="flex items-center justify-between text-xs text-[#6C757D] pb-2 border-b border-[#E9ECEF]">
+                  <span>Record #{idx + 1}</span>
+                  <span>{formatDate(record.createdAt)}</span>
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">Doctor</span>
+                  <p className="text-sm">{record.doctorName}</p>
+                </div>
+                <div>
+                  <span className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">Diagnosis</span>
+                  <p className="text-sm bg-[#F8F9FA] p-3 rounded">{record.diagnosis}</p>
+                </div>
+                {record.symptoms && (
+                  <div>
+                    <span className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">Symptoms</span>
+                    <p className="text-sm bg-[#F8F9FA] p-3 rounded">{record.symptoms}</p>
+                  </div>
+                )}
+                {record.treatment && (
+                  <div>
+                    <span className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">Treatment</span>
+                    <p className="text-sm bg-[#F8F9FA] p-3 rounded">{record.treatment}</p>
+                  </div>
+                )}
+                {record.notes && (
+                  <div>
+                    <span className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">Notes</span>
+                    <p className="text-sm bg-[#F8F9FA] p-3 rounded">{record.notes}</p>
+                  </div>
+                )}
+                <div className="text-xs text-[#6C757D]">
+                  {record.isConfidential ? 'Confidential' : 'Non-confidential'}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
+
       <Modal isOpen={!!selectedRecord} onClose={() => setSelectedRecord(null)} title="Medical Record Details" size="lg"
         footer={selectedRecord ? <Button size="sm" onClick={() => {
           const pxHtml = selectedRecord.prescriptions?.length > 0
             ? `<h3 style="margin-top:20px;font-size:14px;color:#6C757D;text-transform:uppercase;letter-spacing:0.5px;">Prescriptions</h3>
                 <table><thead><tr><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th><th>Status</th></tr></thead>
                 <tbody>${selectedRecord.prescriptions.map((px: any) =>
-                  `<tr><td>${px.medicineName}</td><td>${px.dosage}</td><td>${px.frequency}</td><td>${px.duration || '—'}</td><td>${px.status}</td></tr>`
-                ).join('')}</tbody></table>`
+              `<tr><td>${px.medicineName}</td><td>${px.dosage}</td><td>${px.frequency}</td><td>${px.duration || '—'}</td><td>${px.status}</td></tr>`
+            ).join('')}</tbody></table>`
             : '';
           printHtml(`Medical Record - ${selectedRecord.patientName}`, `
             <h1>Medical Record</h1>
@@ -249,11 +288,11 @@ export function MedicalRecords() {
             ${pxHtml}
           `);
         }}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" />
-            </svg>
-            Print
-          </Button> : undefined}
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" />
+          </svg>
+          Print
+        </Button> : undefined}
       >
         {selectedRecord && (
           <div className="space-y-4">
@@ -292,11 +331,10 @@ export function MedicalRecords() {
                   <div key={px.id} className="flex items-center justify-between p-2 bg-[#F8F9FA] rounded mb-1 text-sm">
                     <span className="font-medium">{px.medicineName}</span>
                     <span className="text-[#6C757D]">{px.dosage} - {px.frequency}{px.duration ? ` for ${px.duration}` : ''} ({px.quantity} {px.quantity > 1 ? 'units' : 'unit'})</span>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
-                      px.status === 'Completed' ? 'bg-[#D4EDDA] text-[#155724]' :
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${px.status === 'Completed' ? 'bg-[#D4EDDA] text-[#155724]' :
                       px.status === 'Paid' ? 'bg-[#FFF3CD] text-[#856404]' :
-                      'bg-[#E2E3E5] text-[#383D41]'
-                    }`}>{px.status}</span>
+                        'bg-[#E2E3E5] text-[#383D41]'
+                      }`}>{px.status}</span>
                   </div>
                 ))}
               </div>

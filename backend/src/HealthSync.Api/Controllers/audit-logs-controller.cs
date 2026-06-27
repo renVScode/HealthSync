@@ -25,7 +25,9 @@ public class AuditLogsController : ControllerBase
         [FromQuery] DateTime? to = null,
         [FromQuery] string? search = null)
     {
-        var (items, totalCount) = await _auditService.GetLogsPaginatedAsync(page, pageSize, entityType, from, to, search);
+        var utcFrom = from.HasValue ? (DateTime?)DateTime.SpecifyKind(from.Value, DateTimeKind.Utc) : null;
+        var utcTo = to.HasValue ? (DateTime?)DateTime.SpecifyKind(to.Value, DateTimeKind.Utc) : null;
+        var (items, totalCount) = await _auditService.GetLogsPaginatedAsync(page, pageSize, entityType, utcFrom, utcTo, search);
         return Ok(new { items, totalCount });
     }
 }
