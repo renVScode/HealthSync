@@ -19,8 +19,13 @@ public class InventoryController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] Guid? medicineId, [FromQuery] bool? expiringSoon)
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 25, [FromQuery] string? search = null, [FromQuery] Guid? medicineId = null, [FromQuery] bool? expiringSoon = null)
     {
+        if (page > 1 || !string.IsNullOrEmpty(search))
+        {
+            var result = await _inventoryService.GetPaginatedAsync(page, pageSize, search, medicineId, expiringSoon);
+            return Ok(new { result.Items, result.TotalCount, result.Page, result.PageSize });
+        }
         var batches = await _inventoryService.GetAllAsync(medicineId, expiringSoon);
         return Ok(batches);
     }

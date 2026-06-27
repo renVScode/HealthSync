@@ -24,6 +24,13 @@ public class PatientsController : ControllerBase
         return Ok(new { result.Items, result.TotalCount, result.Page, result.PageSize });
     }
 
+    [HttpGet("by-doctor/{doctorId:guid}")]
+    public async Task<IActionResult> GetByDoctor(Guid doctorId, [FromQuery] int page = 1, [FromQuery] int pageSize = 25, [FromQuery] string? search = null)
+    {
+        var result = await _patientService.GetByDoctorIdAsync(doctorId, page, pageSize, search);
+        return Ok(new { result.Items, result.TotalCount, result.Page, result.PageSize });
+    }
+
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {

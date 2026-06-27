@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using HealthSync.Core.DTOs;
 using HealthSync.Core.DTOs.Doctor;
 using HealthSync.Core.Enums;
 using HealthSync.Core.Entities;
@@ -18,20 +20,34 @@ public class DoctorService : IDoctorService
     public async Task<IEnumerable<DoctorResponseDto>> GetAllAsync()
     {
         var doctors = await _uow.Doctors.GetAllAsync();
-        return doctors.Select(d => new DoctorResponseDto
+        return doctors.Select(d => MapToDto(d));
+    }
+
+    public async Task<PaginatedResult<DoctorResponseDto>> GetAllAsync(int page, int pageSize, string? search)
+    {
+        var query = _uow.Doctors.Query();
+        if (!string.IsNullOrWhiteSpace(search))
         {
-            Id = d.Id,
-            UserId = d.UserId,
-            FirstName = d.FirstName,
-            LastName = d.LastName,
-            Specialization = d.Specialization,
-            LicenseNumber = d.LicenseNumber,
-            Phone = d.Phone,
-            Email = d.Email,
-            Bio = d.Bio,
-            ConsultationFee = d.ConsultationFee,
-            IsActive = d.IsActive
-        });
+            var term = search.ToLower();
+            query = query.Where(d => d.FirstName.ToLower().Contains(term)
+                                  || d.LastName.ToLower().Contains(term)
+                                  || d.Specialization.ToLower().Contains(term)
+                                  || d.LicenseNumber.ToLower().Contains(term));
+        }
+
+        var total = await query.CountAsync();
+        var items = await query.OrderBy(d => d.LastName)
+                               .Skip((page - 1) * pageSize)
+                               .Take(pageSize)
+                               .ToListAsync();
+
+        return new PaginatedResult<DoctorResponseDto>
+        {
+            Items = items.Select(MapToDto).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<DoctorResponseDto?> GetByIdAsync(Guid id)
@@ -49,8 +65,18 @@ public class DoctorService : IDoctorService
             Email = doctor.Email,
             Bio = doctor.Bio,
             ConsultationFee = doctor.ConsultationFee,
+            ProfileImageUrl = doctor.ProfileImageUrl,
+            LicenseImageUrl = doctor.LicenseImageUrl,
             IsActive = doctor.IsActive
         };
+    }
+
+    public async Task<DoctorResponseDto?> GetByUserIdAsync(string userId)
+    {
+        if (!Guid.TryParse(userId, out var parsedUserId))
+            return null;
+        var doctor = await _uow.Doctors.Query().FirstOrDefaultAsync(d => d.UserId == parsedUserId);
+        return doctor == null ? null : MapToDto(doctor);
     }
 
     public async Task<DoctorResponseDto> CreateAsync(CreateDoctorDto dto)
@@ -83,6 +109,8 @@ public class DoctorService : IDoctorService
         if (dto.Email != null) doctor.Email = dto.Email;
         if (dto.Bio != null) doctor.Bio = dto.Bio;
         if (dto.ConsultationFee.HasValue) doctor.ConsultationFee = dto.ConsultationFee.Value;
+        if (dto.ProfileImageUrl != null) doctor.ProfileImageUrl = dto.ProfileImageUrl;
+        if (dto.LicenseImageUrl != null) doctor.LicenseImageUrl = dto.LicenseImageUrl;
         if (dto.IsActive.HasValue) doctor.IsActive = dto.IsActive.Value;
         doctor.UpdatedAt = DateTime.UtcNow;
         await _uow.SaveChangesAsync();
@@ -197,4 +225,21 @@ public class DoctorService : IDoctorService
         }
         return slots;
     }
+
+    private static DoctorResponseDto MapToDto(Doctor d) => new()
+    {
+        Id = d.Id,
+        UserId = d.UserId,
+        FirstName = d.FirstName,
+        LastName = d.LastName,
+        Specialization = d.Specialization,
+        LicenseNumber = d.LicenseNumber,
+        Phone = d.Phone,
+        Email = d.Email,
+        Bio = d.Bio,
+        ConsultationFee = d.ConsultationFee,
+        ProfileImageUrl = d.ProfileImageUrl,
+        LicenseImageUrl = d.LicenseImageUrl,
+        IsActive = d.IsActive
+    };
 }

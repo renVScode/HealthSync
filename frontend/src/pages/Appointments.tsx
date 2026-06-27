@@ -18,7 +18,10 @@ export function Appointments() {
 
   useEffect(() => {
     patientService.getAll(1, 100).then((r) => setPatients(r.data.items));
-    doctorService.getAll().then((r) => setDoctors(r.data));
+    doctorService.getAll().then((r) => {
+      const data = r.data;
+      setDoctors(Array.isArray(data) ? data : data.items || []);
+    });
   }, []);
 
   const loadEvents = async (start: string, end: string) => {

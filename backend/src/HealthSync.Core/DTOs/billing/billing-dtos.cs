@@ -25,6 +25,7 @@ public class CreatePaymentDto
     public decimal Amount { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
     public string? TransactionReference { get; set; }
+    public string? QrCodeImageUrl { get; set; }
     public string? Notes { get; set; }
 }
 
@@ -62,6 +63,8 @@ public class PaymentResponseDto
     public decimal Amount { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
     public string? TransactionReference { get; set; }
+    public string? QrCodeImageUrl { get; set; }
+    public bool IsVerified { get; set; }
     public string? ReceivedBy { get; set; }
     public DateTime ReceivedAt { get; set; }
 }
@@ -72,14 +75,8 @@ public class BillingFilterDto
     public BillingStatus? Status { get; set; }
     public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }
+    public string? Search { get; set; }
     public int Page { get; set; } = 1;
-    public int PageSize { get; set; } = 20;
+    public int PageSize { get; set; } = 25;
 }
 
-public class PaginatedResult<T>
-{
-    public List<T> Items { get; set; } = [];
-    public int TotalCount { get; set; }
-    public int Page { get; set; }
-    public int PageSize { get; set; }
-}

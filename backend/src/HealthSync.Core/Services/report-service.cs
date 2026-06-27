@@ -54,6 +54,7 @@ public class ReportService : IReportService
     {
         var appointments = await _uow.Appointments.Query()
             .Include(a => a.Doctor)
+            .Include(a => a.Billing)
             .Where(a => a.StartTime >= from && a.StartTime <= to && a.Status == AppointmentStatus.Completed)
             .ToListAsync();
 
@@ -64,7 +65,8 @@ public class ReportService : IReportService
                 DoctorName = $"{g.Key.FirstName} {g.Key.LastName}",
                 Specialization = g.Key.Specialization,
                 AppointmentsCompleted = g.Count(),
-                PatientsSeen = g.Select(a => a.PatientId).Distinct().Count()
+                PatientsSeen = g.Select(a => a.PatientId).Distinct().Count(),
+                RevenueGenerated = g.Sum(a => a.Billing != null ? a.Billing.AmountPaid : 0)
             }).ToList();
     }
 

@@ -68,6 +68,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(d => d.LastName).HasMaxLength(100).IsRequired();
             entity.Property(d => d.Specialization).HasMaxLength(200).IsRequired();
             entity.Property(d => d.LicenseNumber).HasMaxLength(50).IsRequired();
+            entity.Property(d => d.ProfileImageUrl).HasMaxLength(500);
+            entity.Property(d => d.LicenseImageUrl).HasMaxLength(500);
             entity.HasIndex(d => d.LicenseNumber).IsUnique();
             entity.HasOne(d => d.User).WithOne(u => u.Doctor).HasForeignKey<Doctor>(d => d.UserId).OnDelete(DeleteBehavior.Cascade);
         });
@@ -112,8 +114,11 @@ public class ApplicationDbContext : DbContext
             entity.Property(p => p.Dosage).HasMaxLength(100).IsRequired();
             entity.Property(p => p.Frequency).HasMaxLength(100).IsRequired();
             entity.Property(p => p.Duration).HasMaxLength(100);
+            entity.Property(p => p.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
             entity.HasOne(p => p.MedicalRecord).WithMany(r => r.Prescriptions).HasForeignKey(p => p.MedicalRecordId);
             entity.HasOne(p => p.Medicine).WithMany(m => m.Prescriptions).HasForeignKey(p => p.MedicineId);
+            entity.HasOne(p => p.DispensedByUser).WithMany().HasForeignKey(p => p.DispensedByUserId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasOne(p => p.InventoryBatch).WithMany().HasForeignKey(p => p.InventoryBatchId).OnDelete(DeleteBehavior.SetNull);
         });
 
         // Medicine
@@ -181,6 +186,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(p => p.Amount).HasColumnType("decimal(12,2)");
             entity.Property(p => p.PaymentMethod).HasConversion<string>().HasMaxLength(20).IsRequired();
             entity.Property(p => p.TransactionReference).HasMaxLength(255);
+            entity.Property(p => p.QrCodeImageUrl).HasMaxLength(500);
             entity.HasOne(p => p.Billing).WithMany(b => b.Payments).HasForeignKey(p => p.BillingId);
             entity.HasOne(p => p.ReceivedBy).WithMany().HasForeignKey(p => p.ReceivedById).OnDelete(DeleteBehavior.NoAction);
         });

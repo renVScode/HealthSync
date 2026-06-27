@@ -15,8 +15,9 @@ import { MedicalRecords } from './pages/MedicalRecords';
 import { Billings } from './pages/Billings';
 import { Inventory } from './pages/Inventory';
 import { Reports } from './pages/Reports';
+import { Pharmacy } from './pages/Pharmacy';
 import { Users } from './pages/Users';
-import { Settings } from './pages/Settings';
+import { AuditLogs } from './pages/AuditLogs';
 import { NotFound } from './pages/NotFound';
 
 export function AppRoutes() {
@@ -39,8 +40,9 @@ export function AppRoutes() {
         <Route path="billings" element={<ProtectedRoute roles={['Admin', 'Receptionist']}><Billings /></ProtectedRoute>} />
         <Route path="inventory" element={<ProtectedRoute roles={['Admin', 'Pharmacist']}><Inventory /></ProtectedRoute>} />
         <Route path="reports" element={<Reports />} />
+        <Route path="pharmacy" element={<ProtectedRoute roles={['Admin', 'Pharmacist']}><Pharmacy /></ProtectedRoute>} />
+        <Route path="audit-logs" element={<ProtectedRoute roles={['Admin']}><AuditLogs /></ProtectedRoute>} />
         <Route path="users" element={<ProtectedRoute roles={['Admin']}><Users /></ProtectedRoute>} />
-        <Route path="settings" element={<ProtectedRoute roles={['Admin']}><Settings /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

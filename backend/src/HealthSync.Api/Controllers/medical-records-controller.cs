@@ -65,4 +65,12 @@ public class MedicalRecordsController : ControllerBase
         var result = await _medicalRecordService.AddPrescriptionAsync(id, dto);
         return Ok(result);
     }
+
+    [HttpPost("{id:guid}/prescriptions/batch")]
+    [Authorize(Roles = "Admin,Doctor")]
+    public async Task<IActionResult> AddPrescriptions(Guid id, [FromBody] List<CreatePrescriptionDto> dtos)
+    {
+        var result = await _medicalRecordService.AddPrescriptionsAsync(id, dtos);
+        return Ok(result);
+    }
 }

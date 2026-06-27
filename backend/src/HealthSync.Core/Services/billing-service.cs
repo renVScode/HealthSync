@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using HealthSync.Core.DTOs;
 using HealthSync.Core.DTOs.Billing;
 using HealthSync.Core.Entities;
 using HealthSync.Core.Enums;
@@ -10,10 +11,12 @@ namespace HealthSync.Core.Services;
 public class BillingService : IBillingService
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMedicalRecordService _medicalRecordService;
 
-    public BillingService(IUnitOfWork uow)
+    public BillingService(IUnitOfWork uow, IMedicalRecordService medicalRecordService)
     {
         _uow = uow;
+        _medicalRecordService = medicalRecordService;
     }
 
     public async Task<PaginatedResult<BillingResponseDto>> GetAllAsync(BillingFilterDto filter)
@@ -28,6 +31,13 @@ public class BillingService : IBillingService
         if (filter.Status.HasValue) query = query.Where(b => b.Status == filter.Status);
         if (filter.DateFrom.HasValue) query = query.Where(b => b.CreatedAt >= filter.DateFrom);
         if (filter.DateTo.HasValue) query = query.Where(b => b.CreatedAt <= filter.DateTo);
+        if (!string.IsNullOrWhiteSpace(filter.Search))
+        {
+            var term = filter.Search.ToLower();
+            query = query.Where(b => b.InvoiceNumber.ToLower().Contains(term)
+                                  || b.Patient.FirstName.ToLower().Contains(term)
+                                  || b.Patient.LastName.ToLower().Contains(term));
+        }
 
         var total = await query.CountAsync();
         var items = await query.OrderByDescending(b => b.CreatedAt)
@@ -85,6 +95,61 @@ public class BillingService : IBillingService
         return MapToDto(billing);
     }
 
+    public async Task<BillingResponseDto?> GenerateInvoiceFromVisitAsync(Guid appointmentId, string userId)
+    {
+        var appointment = await _uow.Appointments.Query()
+            .Include(a => a.Patient)
+            .Include(a => a.Doctor)
+            .Include(a => a.MedicalRecord).ThenInclude(r => r.Prescriptions).ThenInclude(p => p.Medicine)
+            .FirstOrDefaultAsync(a => a.Id == appointmentId);
+
+        if (appointment == null || appointment.MedicalRecord == null)
+            return null;
+
+        var medicalRecord = appointment.MedicalRecord;
+        var consultationFee = appointment.Doctor.ConsultationFee;
+
+        var items = new List<CreateBillingItemDto>
+        {
+            new()
+            {
+                Description = $"Consultation - Dr. {appointment.Doctor.FirstName} {appointment.Doctor.LastName}",
+                Quantity = 1,
+                UnitPrice = consultationFee
+            }
+        };
+
+        foreach (var prescription in medicalRecord.Prescriptions)
+        {
+            items.Add(new CreateBillingItemDto
+            {
+                Description = $"{prescription.Medicine.Name} ({prescription.Dosage}, {prescription.Frequency})",
+                Quantity = prescription.Quantity,
+                UnitPrice = prescription.Medicine.Price
+            });
+        }
+
+        var createDto = new CreateBillingDto
+        {
+            PatientId = appointment.PatientId,
+            AppointmentId = appointmentId,
+            Items = items
+        };
+
+        var billing = await CreateAsync(createDto);
+
+        if (string.IsNullOrEmpty(appointment.Token))
+        {
+            var datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+            var todayCount = await _uow.Appointments.Query()
+                .CountAsync(a => a.CreatedAt.Date == DateTime.UtcNow.Date);
+            appointment.Token = $"T-{datePart}-{todayCount + 1:D4}";
+            await _uow.SaveChangesAsync();
+        }
+
+        return billing;
+    }
+
     public async Task<bool> AddPaymentAsync(Guid billingId, CreatePaymentDto dto)
     {
         var billing = await _uow.Billings.Query()
@@ -94,20 +159,75 @@ public class BillingService : IBillingService
         if (billing == null || billing.Status == BillingStatus.Paid || billing.Status == BillingStatus.Cancelled)
             return false;
 
+        var hasQr = !string.IsNullOrWhiteSpace(dto.QrCodeImageUrl);
         var payment = new Payment
         {
             BillingId = billingId,
             Amount = dto.Amount,
             PaymentMethod = dto.PaymentMethod,
             TransactionReference = dto.TransactionReference,
+            QrCodeImageUrl = dto.QrCodeImageUrl,
+            IsVerified = !hasQr,
             Notes = dto.Notes
         };
 
         await _uow.Payments.AddAsync(payment);
-        billing.AmountPaid += dto.Amount;
-        billing.Status = billing.AmountPaid >= billing.Total ? BillingStatus.Paid : BillingStatus.PartiallyPaid;
-        billing.UpdatedAt = DateTime.UtcNow;
+        if (payment.IsVerified)
+        {
+            billing.AmountPaid += dto.Amount;
+            billing.Status = billing.AmountPaid >= billing.Total ? BillingStatus.Paid : BillingStatus.PartiallyPaid;
+        }
 
+        if (billing.Status == BillingStatus.Paid && billing.AppointmentId.HasValue)
+        {
+            var appointment = await _uow.Appointments.Query()
+                .Include(a => a.MedicalRecord)
+                .FirstOrDefaultAsync(a => a.Id == billing.AppointmentId);
+
+            if (appointment?.MedicalRecord != null)
+                await _medicalRecordService.MarkPrescriptionsAsPaidAsync(appointment.MedicalRecord.Id);
+        }
+
+        billing.UpdatedAt = DateTime.UtcNow;
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> VerifyPaymentAsync(Guid paymentId, string userId)
+    {
+        var payment = await _uow.Payments.Query()
+            .Include(p => p.Billing)
+            .FirstOrDefaultAsync(p => p.Id == paymentId);
+
+        if (payment == null || payment.IsVerified || payment.Billing.Status == BillingStatus.Cancelled)
+            return false;
+
+        payment.IsVerified = true;
+        payment.Billing.AmountPaid += payment.Amount;
+        payment.Billing.Status = payment.Billing.AmountPaid >= payment.Billing.Total
+            ? BillingStatus.Paid : BillingStatus.PartiallyPaid;
+        payment.Billing.UpdatedAt = DateTime.UtcNow;
+
+        if (payment.Billing.Status == BillingStatus.Paid && payment.Billing.AppointmentId.HasValue)
+        {
+            var appointment = await _uow.Appointments.Query()
+                .Include(a => a.MedicalRecord)
+                .FirstOrDefaultAsync(a => a.Id == payment.Billing.AppointmentId);
+
+            if (appointment?.MedicalRecord != null)
+                await _medicalRecordService.MarkPrescriptionsAsPaidAsync(appointment.MedicalRecord.Id);
+        }
+
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UploadPaymentQrCodeAsync(Guid paymentId, string imageUrl)
+    {
+        var payment = await _uow.Payments.GetByIdAsync(paymentId);
+        if (payment == null) return false;
+
+        payment.QrCodeImageUrl = imageUrl;
         await _uow.SaveChangesAsync();
         return true;
     }
@@ -121,6 +241,8 @@ public class BillingService : IBillingService
             Amount = p.Amount,
             PaymentMethod = p.PaymentMethod,
             TransactionReference = p.TransactionReference,
+            QrCodeImageUrl = p.QrCodeImageUrl,
+            IsVerified = p.IsVerified,
             ReceivedAt = p.ReceivedAt
         }).ToList();
     }
@@ -160,6 +282,8 @@ public class BillingService : IBillingService
             Amount = p.Amount,
             PaymentMethod = p.PaymentMethod,
             TransactionReference = p.TransactionReference,
+            QrCodeImageUrl = p.QrCodeImageUrl,
+            IsVerified = p.IsVerified,
             ReceivedAt = p.ReceivedAt
         }).ToList()
     };

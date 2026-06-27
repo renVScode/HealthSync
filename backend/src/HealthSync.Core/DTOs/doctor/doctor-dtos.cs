@@ -22,6 +22,8 @@ public class UpdateDoctorDto
     public string? Email { get; set; }
     public string? Bio { get; set; }
     public decimal? ConsultationFee { get; set; }
+    public string? ProfileImageUrl { get; set; }
+    public string? LicenseImageUrl { get; set; }
     public bool? IsActive { get; set; }
 }
 
@@ -37,6 +39,8 @@ public class DoctorResponseDto
     public string? Email { get; set; }
     public string? Bio { get; set; }
     public decimal ConsultationFee { get; set; }
+    public string? ProfileImageUrl { get; set; }
+    public string? LicenseImageUrl { get; set; }
     public bool IsActive { get; set; }
 }
 

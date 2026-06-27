@@ -34,6 +34,7 @@ public class AppointmentResponseDto
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public AppointmentStatus Status { get; set; }
+    public string? Token { get; set; }
     public string? Reason { get; set; }
     public string? Notes { get; set; }
     public string? CancellationReason { get; set; }
@@ -63,10 +64,3 @@ public class CalendarEventDto
     public Guid DoctorId { get; set; }
 }
 
-public class PaginatedResult<T>
-{
-    public List<T> Items { get; set; } = [];
-    public int TotalCount { get; set; }
-    public int Page { get; set; }
-    public int PageSize { get; set; }
-}

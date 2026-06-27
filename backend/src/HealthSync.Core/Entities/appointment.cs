@@ -10,6 +10,7 @@ public class Appointment
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public AppointmentStatus Status { get; set; } = AppointmentStatus.Scheduled;
+    public string? Token { get; set; }
     public string? Reason { get; set; }
     public string? Notes { get; set; }
     public string? CancellationReason { get; set; }

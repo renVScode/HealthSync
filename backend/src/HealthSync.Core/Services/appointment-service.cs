@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using HealthSync.Core.DTOs;
 using HealthSync.Core.DTOs.Appointment;
 using HealthSync.Core.Entities;
 using HealthSync.Core.Enums;
@@ -106,6 +107,10 @@ public class AppointmentService : IAppointmentService
             Notes = dto.Notes,
             Status = AppointmentStatus.Scheduled
         };
+
+        var datePart = startTime.ToString("yyyyMMdd");
+        var todayCount = await _uow.Appointments.Query().CountAsync(a => a.StartTime.Date == startTime.Date);
+        appointment.Token = $"T-{datePart}-{todayCount + 1:D4}";
 
         await _uow.Appointments.AddAsync(appointment);
         await _uow.SaveChangesAsync();
@@ -236,6 +241,7 @@ public class AppointmentService : IAppointmentService
         StartTime = a.StartTime,
         EndTime = a.EndTime,
         Status = a.Status,
+        Token = a.Token,
         Reason = a.Reason,
         Notes = a.Notes,
         CancellationReason = a.CancellationReason,

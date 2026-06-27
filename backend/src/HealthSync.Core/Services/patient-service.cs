@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using HealthSync.Core.DTOs;
 using HealthSync.Core.DTOs.Patient;
 using HealthSync.Core.Entities;
 using HealthSync.Core.Interfaces;
@@ -98,6 +99,34 @@ public class PatientService : IPatientService
         await _uow.Patients.DeleteAsync(patient);
         await _uow.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<PaginatedResult<PatientResponseDto>> GetByDoctorIdAsync(Guid doctorId, int page, int pageSize, string? search)
+    {
+        var query = _uow.Patients.Query()
+            .Where(p => p.Appointments.Any(a => a.DoctorId == doctorId));
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.ToLower();
+            query = query.Where(p => p.FirstName.ToLower().Contains(term)
+                                  || p.LastName.ToLower().Contains(term)
+                                  || p.Phone.Contains(term));
+        }
+
+        var total = await query.CountAsync();
+        var items = await query.OrderByDescending(p => p.CreatedAt)
+                               .Skip((page - 1) * pageSize)
+                               .Take(pageSize)
+                               .ToListAsync();
+
+        return new PaginatedResult<PatientResponseDto>
+        {
+            Items = items.Select(MapToDto).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<IEnumerable<PatientResponseDto>> SearchAsync(string query)

@@ -8,4 +8,5 @@ export const medicalRecordService = {
   update: (id: string, data: any) => api.put<MedicalRecord>(`/medical-records/${id}`, data),
   getPrescriptions: (id: string) => api.get(`/medical-records/${id}/prescriptions`),
   addPrescription: (id: string, data: any) => api.post(`/medical-records/${id}/prescriptions`, data),
+  addPrescriptions: (id: string, data: any[]) => api.post(`/medical-records/${id}/prescriptions/batch`, data),
 };

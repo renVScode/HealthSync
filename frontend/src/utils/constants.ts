@@ -1,6 +1,6 @@
 export const APP_NAME = 'HealthSync';
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-export const PAGE_SIZE = 20;
+export const PAGE_SIZE = 25;
 
 export const STATUS_COLORS: Record<string, string> = {
   Scheduled: '#17A2B8',

@@ -12,6 +12,8 @@ public class Doctor
     public string? Email { get; set; }
     public string? Bio { get; set; }
     public decimal ConsultationFee { get; set; }
+    public string? ProfileImageUrl { get; set; }
+    public string? LicenseImageUrl { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

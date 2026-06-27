@@ -9,6 +9,8 @@ public class Payment
     public decimal Amount { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
     public string? TransactionReference { get; set; }
+    public string? QrCodeImageUrl { get; set; }
+    public bool IsVerified { get; set; }
     public Guid ReceivedById { get; set; }
     public string? Notes { get; set; }
     public DateTime ReceivedAt { get; set; } = DateTime.UtcNow;

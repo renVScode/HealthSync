@@ -2,19 +2,39 @@ import { useState, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { DataTable } from '../components/common/DataTable';
+import { SearchBar } from '../components/common/SearchBar';
 import { StockAlertBadge } from '../components/domain-components';
 import { inventoryService } from '../services/inventoryService';
+import { useDebounce } from '../hooks/useDebounce';
 import { formatCurrency } from '../utils/formatters';
-import type { InventoryBatch } from '../types';
+import { PAGE_SIZE } from '../utils/constants';
 
 export function Inventory() {
-  const [batches, setBatches] = useState<InventoryBatch[]>([]);
+  const [batches, setBatches] = useState<any[]>([]);
   const [lowStock, setLowStock] = useState<any[]>([]);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const debouncedSearch = useDebounce(search);
 
   useEffect(() => {
-    inventoryService.getAll().then((r) => setBatches(r.data));
     inventoryService.getLowStock().then((r) => setLowStock(r.data));
   }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await inventoryService.getAll(page, PAGE_SIZE, debouncedSearch || undefined);
+      const data = res.data;
+      if (Array.isArray(data)) {
+        setBatches(data);
+        setTotal(0);
+      } else if (data?.items) {
+        setBatches(data.items);
+        setTotal(data.totalCount);
+      }
+    };
+    load();
+  }, [page, debouncedSearch]);
 
   const columns = [
     { key: 'medicineName', header: 'Medicine' },
@@ -42,7 +62,16 @@ export function Inventory() {
       <Card title="Inventory Batches" actions={
         <Button>+ Add Stock</Button>
       }>
-        <DataTable columns={columns} data={batches} />
+        <div className="mb-4">
+          <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by medicine name, batch, or supplier..." />
+        </div>
+        <DataTable
+          columns={columns}
+          data={batches}
+          page={page}
+          totalPages={total > 0 ? Math.ceil(total / PAGE_SIZE) : undefined}
+          onPageChange={setPage}
+        />
       </Card>
     </div>
   );

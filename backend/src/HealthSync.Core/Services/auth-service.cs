@@ -2,13 +2,14 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+using HealthSync.Core.DTOs;
 using HealthSync.Core.DTOs.Auth;
 using HealthSync.Core.Entities.Identity;
 using HealthSync.Core.Enums;
 using HealthSync.Core.Interfaces;
 using HealthSync.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 
@@ -134,6 +135,34 @@ public class AuthService : IAuthService
     {
         var users = await _uow.Users.GetAllAsync();
         return users.Select(MapToUserInfo).ToList();
+    }
+
+    public async Task<PaginatedResult<UserInfoDto>> GetAllUsersAsync(int page, int pageSize, string? search)
+    {
+        var query = _uow.Users.Query();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.ToLower();
+            query = query.Where(u => u.FirstName.ToLower().Contains(term)
+                                  || u.LastName.ToLower().Contains(term)
+                                  || u.Email!.ToLower().Contains(term)
+                                  || u.UserName.ToLower().Contains(term));
+        }
+
+        var total = await query.CountAsync();
+        var items = await query.OrderBy(u => u.LastName)
+                               .Skip((page - 1) * pageSize)
+                               .Take(pageSize)
+                               .ToListAsync();
+
+        return new PaginatedResult<UserInfoDto>
+        {
+            Items = items.Select(MapToUserInfo).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<bool> UpdateUserAsync(Guid id, UpdateUserDto dto)

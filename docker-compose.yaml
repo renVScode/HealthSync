@@ -29,7 +29,9 @@ services:
       - Jwt_Issuer=HealthSync
       - Jwt__Audience=HealthSyncApp
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://0.0.0.0:5000
+      - HTTP_PORTS=5000
+    volumes:
+      - dataprotection:/root/.aspnet/DataProtection-Keys
     depends_on:
       database:
         condition: service_healthy
@@ -50,3 +52,4 @@ services:
 
 volumes:
   pgdata:
+  dataprotection:

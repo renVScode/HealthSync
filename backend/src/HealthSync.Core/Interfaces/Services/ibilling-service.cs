@@ -1,3 +1,4 @@
+using HealthSync.Core.DTOs;
 using HealthSync.Core.DTOs.Billing;
 
 namespace HealthSync.Core.Interfaces.Services;
@@ -9,4 +10,7 @@ public interface IBillingService
     Task<BillingResponseDto> CreateAsync(CreateBillingDto dto);
     Task<bool> AddPaymentAsync(Guid billingId, CreatePaymentDto dto);
     Task<List<PaymentResponseDto>> GetPaymentsAsync(Guid billingId);
+    Task<bool> VerifyPaymentAsync(Guid paymentId, string userId);
+    Task<bool> UploadPaymentQrCodeAsync(Guid paymentId, string imageUrl);
+    Task<BillingResponseDto?> GenerateInvoiceFromVisitAsync(Guid appointmentId, string userId);
 }

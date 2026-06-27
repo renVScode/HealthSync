@@ -51,6 +51,7 @@ public class CreatePrescriptionDto
 public class PrescriptionResponseDto
 {
     public Guid Id { get; set; }
+    public Guid MedicalRecordId { get; set; }
     public Guid MedicineId { get; set; }
     public string MedicineName { get; set; } = string.Empty;
     public string Dosage { get; set; } = string.Empty;
@@ -58,5 +59,14 @@ public class PrescriptionResponseDto
     public string? Duration { get; set; }
     public string? Instructions { get; set; }
     public int Quantity { get; set; }
-    public bool IsDispensed { get; set; }
+    public string Status { get; set; } = "Pending";
+    public string? DispensedBy { get; set; }
+    public DateTime? DispensedAt { get; set; }
+    public Guid? InventoryBatchId { get; set; }
+}
+
+public class DispensePrescriptionDto
+{
+    public Guid BatchId { get; set; }
+    public int Quantity { get; set; }
 }

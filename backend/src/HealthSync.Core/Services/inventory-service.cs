@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using HealthSync.Core.DTOs;
 using HealthSync.Core.DTOs.Medicine;
 using HealthSync.Core.Entities;
 using HealthSync.Core.Enums;
@@ -31,19 +32,57 @@ public class InventoryService : IInventoryService
         }
 
         var batches = await query.OrderBy(b => b.ExpiryDate).ToListAsync();
-        return batches.Select(b => new InventoryBatchResponseDto
-        {
-            Id = b.Id,
-            MedicineId = b.MedicineId,
-            MedicineName = b.Medicine.Name,
-            BatchNumber = b.BatchNumber,
-            Quantity = b.Quantity,
-            UnitPrice = b.UnitPrice,
-            ExpiryDate = b.ExpiryDate?.ToDateTime(TimeOnly.MinValue),
-            Supplier = b.Supplier,
-            IsLowStock = b.Quantity <= b.Medicine.ReorderLevel
-        });
+        return batches.Select(MapToDto);
     }
+
+    public async Task<PaginatedResult<InventoryBatchResponseDto>> GetPaginatedAsync(int page, int pageSize, string? search, Guid? medicineId, bool? expiringSoon)
+    {
+        var query = _uow.InventoryBatches.Query()
+            .Include(b => b.Medicine)
+            .AsQueryable();
+
+        if (medicineId.HasValue)
+            query = query.Where(b => b.MedicineId == medicineId);
+        if (expiringSoon == true)
+        {
+            var threshold = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(90));
+            query = query.Where(b => b.ExpiryDate <= threshold && b.ExpiryDate > DateOnly.FromDateTime(DateTime.UtcNow));
+        }
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.ToLower();
+            query = query.Where(b => b.Medicine.Name.ToLower().Contains(term)
+                                  || b.BatchNumber.ToLower().Contains(term)
+                                  || (b.Supplier != null && b.Supplier.ToLower().Contains(term)));
+        }
+
+        var total = await query.CountAsync();
+        var items = await query.OrderBy(b => b.ExpiryDate)
+                               .Skip((page - 1) * pageSize)
+                               .Take(pageSize)
+                               .ToListAsync();
+
+        return new PaginatedResult<InventoryBatchResponseDto>
+        {
+            Items = items.Select(MapToDto).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        };
+    }
+
+    private static InventoryBatchResponseDto MapToDto(InventoryBatch b) => new()
+    {
+        Id = b.Id,
+        MedicineId = b.MedicineId,
+        MedicineName = b.Medicine.Name,
+        BatchNumber = b.BatchNumber,
+        Quantity = b.Quantity,
+        UnitPrice = b.UnitPrice,
+        ExpiryDate = b.ExpiryDate?.ToDateTime(TimeOnly.MinValue),
+        Supplier = b.Supplier,
+        IsLowStock = b.Quantity <= b.Medicine.ReorderLevel
+    };
 
     public async Task<InventoryBatchResponseDto?> GetByIdAsync(Guid id)
     {

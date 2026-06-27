@@ -1,3 +1,4 @@
+using HealthSync.Core.DTOs;
 using HealthSync.Core.DTOs.Patient;
 
 namespace HealthSync.Core.Interfaces.Services;
@@ -10,4 +11,5 @@ public interface IPatientService
     Task<PatientResponseDto?> UpdateAsync(Guid id, UpdatePatientDto dto);
     Task<bool> DeleteAsync(Guid id);
     Task<IEnumerable<PatientResponseDto>> SearchAsync(string query);
+    Task<PaginatedResult<PatientResponseDto>> GetByDoctorIdAsync(Guid doctorId, int page, int pageSize, string? search);
 }

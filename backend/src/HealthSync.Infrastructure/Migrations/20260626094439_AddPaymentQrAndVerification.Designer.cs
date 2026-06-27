@@ -3,6 +3,7 @@ using System;
 using HealthSync.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HealthSync.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260626094439_AddPaymentQrAndVerification")]
+    partial class AddPaymentQrAndVerification
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -58,9 +61,6 @@ namespace HealthSync.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
-
-                    b.Property<string>("Token")
-                        .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -704,12 +704,6 @@ namespace HealthSync.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("DispensedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("DispensedByUserId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Dosage")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -727,8 +721,8 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Property<string>("Instructions")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("InventoryBatchId")
-                        .HasColumnType("uuid");
+                    b.Property<bool>("IsDispensed")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("MedicalRecordId")
                         .HasColumnType("uuid");
@@ -739,16 +733,7 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("DispensedByUserId");
-
-                    b.HasIndex("InventoryBatchId");
 
                     b.HasIndex("MedicalRecordId");
 
@@ -963,16 +948,6 @@ namespace HealthSync.Infrastructure.Migrations
 
             modelBuilder.Entity("HealthSync.Core.Entities.Prescription", b =>
                 {
-                    b.HasOne("HealthSync.Core.Entities.Identity.ApplicationUser", "DispensedByUser")
-                        .WithMany()
-                        .HasForeignKey("DispensedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("HealthSync.Core.Entities.InventoryBatch", "InventoryBatch")
-                        .WithMany()
-                        .HasForeignKey("InventoryBatchId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("HealthSync.Core.Entities.MedicalRecord", "MedicalRecord")
                         .WithMany("Prescriptions")
                         .HasForeignKey("MedicalRecordId")
@@ -984,10 +959,6 @@ namespace HealthSync.Infrastructure.Migrations
                         .HasForeignKey("MedicineId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("DispensedByUser");
-
-                    b.Navigation("InventoryBatch");
 
                     b.Navigation("MedicalRecord");
 

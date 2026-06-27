@@ -2,6 +2,8 @@ using HealthSync.Core.DTOs.Billing;
 using HealthSync.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Hosting;
 
 namespace HealthSync.Api.Controllers;
 
@@ -11,10 +13,12 @@ namespace HealthSync.Api.Controllers;
 public class BillingsController : ControllerBase
 {
     private readonly IBillingService _billingService;
+    private readonly IWebHostEnvironment _env;
 
-    public BillingsController(IBillingService billingService)
+    public BillingsController(IBillingService billingService, IWebHostEnvironment env)
     {
         _billingService = billingService;
+        _env = env;
     }
 
     [HttpGet]
@@ -39,12 +43,75 @@ public class BillingsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
+    [HttpPost("from-visit/{appointmentId:guid}")]
+    public async Task<IActionResult> GenerateInvoiceFromVisit(Guid appointmentId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var billing = await _billingService.GenerateInvoiceFromVisitAsync(appointmentId, userId);
+        if (billing == null) return BadRequest(new { message = "Appointment not found or no medical record exists" });
+        return CreatedAtAction(nameof(GetById), new { id = billing.Id }, billing);
+    }
+
     [HttpPost("{id:guid}/payments")]
     public async Task<IActionResult> AddPayment(Guid id, [FromBody] CreatePaymentDto dto)
     {
         var result = await _billingService.AddPaymentAsync(id, dto);
         if (!result) return BadRequest(new { message = "Invoice already fully paid or cancelled" });
         return Ok(new { message = "Payment recorded" });
+    }
+
+    [HttpPost("payments/{paymentId:guid}/verify")]
+    public async Task<IActionResult> VerifyPayment(Guid paymentId)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var result = await _billingService.VerifyPaymentAsync(paymentId, userId);
+        if (!result) return BadRequest(new { message = "Payment already verified or billing cancelled" });
+        return Ok(new { message = "Payment verified" });
+    }
+
+    [HttpPost("upload-qr")]
+    public async Task<IActionResult> UploadQrCode(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file uploaded" });
+
+        var uploadsDir = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "uploads", "payments");
+        Directory.CreateDirectory(uploadsDir);
+
+        var ext = Path.GetExtension(file.FileName);
+        var fileName = $"qr_{Guid.NewGuid()}{ext}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var url = $"/uploads/payments/{fileName}";
+        return Ok(new { url });
+    }
+
+    [HttpPost("{id:guid}/payments/{paymentId:guid}/upload-qr")]
+    public async Task<IActionResult> UploadPaymentQrCode(Guid id, Guid paymentId, IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest(new { message = "No file uploaded" });
+
+        var uploadsDir = Path.Combine(_env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "uploads", "payments");
+        Directory.CreateDirectory(uploadsDir);
+
+        var ext = Path.GetExtension(file.FileName);
+        var fileName = $"{paymentId}_{DateTime.UtcNow:yyyyMMddHHmmss}{ext}";
+        var filePath = Path.Combine(uploadsDir, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var imageUrl = $"/uploads/payments/{fileName}";
+        await _billingService.UploadPaymentQrCodeAsync(paymentId, imageUrl);
+        return Ok(new { url = imageUrl });
     }
 
     [HttpGet("{id:guid}/payments")]

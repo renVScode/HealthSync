@@ -84,11 +84,13 @@ export interface Doctor {
   firstName: string;
   lastName: string;
   specialization: string;
-  licnseNumber: string;
+  licenseNumber: string;
   phone?: string;
   email?: string;
   bio?: string;
   consultationFee: number;
+  profileImageUrl?: string;
+  licenseImageUrl?: string;
   isActive: boolean;
 }
 
@@ -101,6 +103,7 @@ export interface Appointment {
   startTime: string;
   endTime: string;
   status: AppointmentStatus;
+  token?: string;
   reason?: string;
   notes?: string;
   cancellationReason?: string;
@@ -135,8 +138,15 @@ export interface MedicalRecord {
   prescriptions: Prescription[];
 }
 
+export enum PrescriptionStatus {
+  Pending = 0,
+  Paid = 1,
+  Completed = 2,
+}
+
 export interface Prescription {
   id: string;
+  medicalRecordId: string;
   medicineId: string;
   medicineName: string;
   dosage: string;
@@ -144,7 +154,10 @@ export interface Prescription {
   duration?: string;
   instructions?: string;
   quantity: number;
-  isDispensed: boolean;
+  status: string;
+  dispensedBy?: string;
+  dispensedAt?: string;
+  inventoryBatchId?: string;
 }
 
 export interface Billing {
@@ -178,6 +191,8 @@ export interface Payment {
   amount: number;
   paymentMethod: PaymentMethod;
   transactionReference?: string;
+  qrCodeImageUrl?: string;
+  isVerified: boolean;
   receivedBy?: string;
   receivedAt: string;
 }
@@ -219,4 +234,18 @@ export interface AvailableSlot {
   startTime: string;
   endTime: string;
   isAvailable: boolean;
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId?: string;
+  oldValues?: string;
+  newValues?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: string;
+  userId?: string;
+  user?: { firstName: string; lastName: string };
 }

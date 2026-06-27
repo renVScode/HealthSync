@@ -1,3 +1,4 @@
+using HealthSync.Core.DTOs;
 using HealthSync.Core.DTOs.Appointment;
 using HealthSync.Core.Enums;
 

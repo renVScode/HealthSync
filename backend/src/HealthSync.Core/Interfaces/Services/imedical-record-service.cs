@@ -1,4 +1,5 @@
 using HealthSync.Core.DTOs.MedicalRecord;
+using HealthSync.Core.Enums;
 
 namespace HealthSync.Core.Interfaces.Services;
 
@@ -10,4 +11,8 @@ public interface IMedicalRecordService
     Task<MedicalRecordResponseDto?> UpdateAsync(Guid id, UpdateMedicalRecordDto dto);
     Task<List<PrescriptionResponseDto>> GetPrescriptionsAsync(Guid medicalRecordId);
     Task<PrescriptionResponseDto> AddPrescriptionAsync(Guid medicalRecordId, CreatePrescriptionDto dto);
+    Task<List<PrescriptionResponseDto>> AddPrescriptionsAsync(Guid medicalRecordId, List<CreatePrescriptionDto> dtos);
+    Task<List<PrescriptionResponseDto>> GetPrescriptionsByStatusAsync(PrescriptionStatus status, int page = 1, int pageSize = 25);
+    Task<bool> MarkPrescriptionsAsPaidAsync(Guid medicalRecordId);
+    Task<bool> DispensePrescriptionAsync(Guid prescriptionId, DispensePrescriptionDto dto, string userId);
 }

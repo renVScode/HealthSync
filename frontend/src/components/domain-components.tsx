@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from './common/Button';
 import { StatusBadge } from './common/StatusBadge';
-import { BillingStatus } from '../types';
+import { BillingStatus, PaymentMethod } from '../types';
 import { formatDate, formatCurrency, getAge } from '../utils/formatters';
+import { billingService } from '../services/billingService';
 
 // Patient Components
 
@@ -148,7 +149,69 @@ export function StockAlertBadge({ currentStock, reorderLevel }: { currentStock: 
 
 // Billing
 
-export function InvoiceView({ billing }: { billing: any }) {
+export function InvoiceView({ billing, onRefresh }: { billing: any; onRefresh?: () => void }) {
+  const [payments, setPayments] = useState<any[]>(billing.payments || []);
+  const [showAddPayment, setShowAddPayment] = useState(false);
+  const [amount, setAmount] = useState(billing.balance > 0 ? billing.balance : 0);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.Online);
+  const [transactionRef, setTransactionRef] = useState('');
+  const [qrFile, setQrFile] = useState<File | null>(null);
+  const [qrPreview, setQrPreview] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleQrFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) {
+      setQrFile(f);
+      const reader = new FileReader();
+      reader.onload = () => setQrPreview(reader.result as string);
+      reader.readAsDataURL(f);
+    }
+  };
+
+  const submitPayment = async () => {
+    setSubmitting(true);
+    setError('');
+    try {
+      let qrUrl = '';
+      if (qrFile) {
+        const qrRes = await billingService.uploadQr(qrFile);
+        qrUrl = qrRes.data.url;
+      }
+
+      const payload: any = { amount, paymentMethod };
+      if (transactionRef) payload.transactionReference = transactionRef;
+      if (qrUrl) payload.qrCodeImageUrl = qrUrl;
+
+      await billingService.addPayment(billing.id, payload);
+      const refreshed = await billingService.getById(billing.id);
+      setPayments(refreshed.data.payments);
+      setShowAddPayment(false);
+      setQrFile(null);
+      setQrPreview('');
+      setTransactionRef('');
+      setAmount(billing.balance > 0 ? billing.balance : 0);
+      onRefresh?.();
+    } catch {
+      setError('Failed to record payment');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleVerify = async (paymentId: string) => {
+    try {
+      await billingService.verifyPayment(paymentId);
+      const refreshed = await billingService.getById(billing.id);
+      setPayments(refreshed.data.payments);
+      onRefresh?.();
+    } catch {
+      setError('Failed to verify payment');
+    }
+  };
+
   return (
     <div className="bg-white border border-[#E9ECEF] rounded-lg p-6">
       <div className="flex justify-between items-start mb-6">
@@ -161,6 +224,8 @@ export function InvoiceView({ billing }: { billing: any }) {
       <div className="mb-4">
         <p className="font-medium">{billing.patientName}</p>
       </div>
+
+      {/* Line Items */}
       <table className="w-full mb-4">
         <thead><tr className="border-b border-[#E9ECEF]">
           <th className="text-left py-2 text-sm">Description</th>
@@ -189,11 +254,93 @@ export function InvoiceView({ billing }: { billing: any }) {
             <td className="text-right py-2">{formatCurrency(billing.total)}</td></tr>
         </tfoot>
       </table>
-      <div className="flex justify-between items-center pt-4 border-t border-[#E9ECEF]">
-        <div>
-          <p className="text-sm text-[#6C757D]">Paid: {formatCurrency(billing.amountPaid)}</p>
-          <p className="text-sm text-[#6C757D]">Balance: <span className="font-medium text-[#212529]">{formatCurrency(billing.balance)}</span></p>
+
+      {/* Payments */}
+      <div className="pt-4 border-t border-[#E9ECEF]">
+        <div className="flex justify-between items-center mb-3">
+          <div>
+            <p className="text-sm text-[#6C757D]">Paid: {formatCurrency(billing.amountPaid)}</p>
+            <p className="text-sm text-[#6C757D]">Balance: <span className="font-medium text-[#212529]">{formatCurrency(billing.balance)}</span></p>
+          </div>
+          {billing.status !== BillingStatus.Paid && billing.status !== BillingStatus.Cancelled && (
+            <Button size="sm" onClick={() => setShowAddPayment(!showAddPayment)}>
+              {showAddPayment ? 'Cancel' : 'Add Payment'}
+            </Button>
+          )}
         </div>
+
+        {/* Add Payment Form */}
+        {showAddPayment && (
+          <div className="bg-[#F8F9FA] border border-[#E9ECEF] rounded-lg p-4 mb-4 space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium mb-1">Amount</label>
+                <input type="number" step="0.01" value={amount}
+                  onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                  className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1">Payment Method</label>
+                <select value={paymentMethod} onChange={(e) => setPaymentMethod(parseInt(e.target.value) as PaymentMethod)}
+                  className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm">
+                  <option value={PaymentMethod.Cash}>Cash</option>
+                  <option value={PaymentMethod.Card}>Card</option>
+                  <option value={PaymentMethod.Online}>Online</option>
+                  <option value={PaymentMethod.Insurance}>Insurance</option>
+                </select>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-medium mb-1">Transaction Reference</label>
+                <input value={transactionRef} onChange={(e) => setTransactionRef(e.target.value)}
+                  className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm" placeholder="Optional" />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs font-medium mb-1">QR Code Proof (optional)</label>
+                <input ref={fileRef} type="file" accept="image/*" onChange={handleQrFile}
+                  className="w-full text-sm" />
+                {qrPreview && (
+                  <img src={qrPreview} alt="QR Preview" className="mt-2 w-32 h-32 object-contain border rounded" />
+                )}
+              </div>
+            </div>
+            {error && <p className="text-sm text-[#DC3545]">{error}</p>}
+            <div className="flex justify-end gap-2">
+              <Button size="sm" onClick={submitPayment} disabled={submitting || amount <= 0}>
+                {submitting ? 'Submitting...' : 'Record Payment'}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Payments List */}
+        {payments.length > 0 && (
+          <div className="space-y-2 mt-3">
+            <p className="text-sm font-medium text-[#6C757D]">Payment History</p>
+            {payments.map((p: any) => (
+              <div key={p.id} className="flex items-center justify-between p-3 bg-[#F8F9FA] rounded-md text-sm">
+                <div className="flex items-center gap-3">
+                  <span className="font-medium">{PaymentMethod[p.paymentMethod]}</span>
+                  <span>{formatCurrency(p.amount)}</span>
+                  {p.transactionReference && <span className="text-[#6C757D]">#{p.transactionReference}</span>}
+                  <span className="text-[#6C757D]">{formatDate(p.receivedAt)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {p.qrCodeImageUrl && (
+                    <img src={p.qrCodeImageUrl} alt="QR" className="w-8 h-8 object-contain border rounded cursor-pointer"
+                      onClick={() => window.open(p.qrCodeImageUrl, '_blank')} title="View QR Code" />
+                  )}
+                  {p.isVerified ? (
+                    <span className="text-xs text-[#28A745] font-medium">Verified</span>
+                  ) : billing.status !== BillingStatus.Cancelled && (
+                    <Button size="sm" onClick={() => handleVerify(p.id)} className="text-xs !px-2 !py-1">
+                      Verify
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

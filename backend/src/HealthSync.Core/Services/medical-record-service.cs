@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using HealthSync.Core.DTOs.MedicalRecord;
 using HealthSync.Core.Entities;
+using HealthSync.Core.Enums;
 using HealthSync.Core.Interfaces;
 using HealthSync.Core.Interfaces.Services;
 
@@ -21,6 +22,7 @@ public class MedicalRecordService : IMedicalRecordService
             .Include(r => r.Patient)
             .Include(r => r.Doctor)
             .Include(r => r.Prescriptions).ThenInclude(p => p.Medicine)
+            .Include(r => r.Prescriptions).ThenInclude(p => p.DispensedByUser)
             .Where(r => r.PatientId == patientId)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
@@ -34,6 +36,7 @@ public class MedicalRecordService : IMedicalRecordService
             .Include(r => r.Patient)
             .Include(r => r.Doctor)
             .Include(r => r.Prescriptions).ThenInclude(p => p.Medicine)
+            .Include(r => r.Prescriptions).ThenInclude(p => p.DispensedByUser)
             .FirstOrDefaultAsync(r => r.Id == id);
 
         return record == null ? null : MapToDto(record);
@@ -61,6 +64,31 @@ public class MedicalRecordService : IMedicalRecordService
         return (await GetByIdAsync(record.Id))!;
     }
 
+    public async Task<List<PrescriptionResponseDto>> AddPrescriptionsAsync(Guid medicalRecordId, List<CreatePrescriptionDto> dtos)
+    {
+        var record = await _uow.MedicalRecords.GetByIdAsync(medicalRecordId);
+        if (record == null) return [];
+
+        foreach (var dto in dtos)
+        {
+            var prescription = new Prescription
+            {
+                MedicalRecordId = medicalRecordId,
+                MedicineId = dto.MedicineId,
+                Dosage = dto.Dosage,
+                Frequency = dto.Frequency,
+                Duration = dto.Duration,
+                Instructions = dto.Instructions,
+                Quantity = dto.Quantity,
+                Status = PrescriptionStatus.Pending
+            };
+            await _uow.Prescriptions.AddAsync(prescription);
+        }
+
+        await _uow.SaveChangesAsync();
+        return await GetPrescriptionsAsync(medicalRecordId);
+    }
+
     public async Task<MedicalRecordResponseDto?> UpdateAsync(Guid id, UpdateMedicalRecordDto dto)
     {
         var record = await _uow.MedicalRecords.GetByIdAsync(id);
@@ -81,21 +109,11 @@ public class MedicalRecordService : IMedicalRecordService
     {
         var prescriptions = await _uow.Prescriptions.Query()
             .Include(p => p.Medicine)
+            .Include(p => p.DispensedByUser)
             .Where(p => p.MedicalRecordId == medicalRecordId)
             .ToListAsync();
 
-        return prescriptions.Select(p => new PrescriptionResponseDto
-        {
-            Id = p.Id,
-            MedicineId = p.MedicineId,
-            MedicineName = p.Medicine.Name,
-            Dosage = p.Dosage,
-            Frequency = p.Frequency,
-            Duration = p.Duration,
-            Instructions = p.Instructions,
-            Quantity = p.Quantity,
-            IsDispensed = p.IsDispensed
-        }).ToList();
+        return prescriptions.Select(MapPrescriptionToDto).ToList();
     }
 
     public async Task<PrescriptionResponseDto> AddPrescriptionAsync(Guid medicalRecordId, CreatePrescriptionDto dto)
@@ -108,13 +126,90 @@ public class MedicalRecordService : IMedicalRecordService
             Frequency = dto.Frequency,
             Duration = dto.Duration,
             Instructions = dto.Instructions,
-            Quantity = dto.Quantity
+            Quantity = dto.Quantity,
+            Status = PrescriptionStatus.Pending
         };
 
         await _uow.Prescriptions.AddAsync(prescription);
         await _uow.SaveChangesAsync();
         return (await GetPrescriptionsAsync(medicalRecordId)).Last();
     }
+
+    public async Task<List<PrescriptionResponseDto>> GetPrescriptionsByStatusAsync(PrescriptionStatus status, int page = 1, int pageSize = 25)
+    {
+        var query = _uow.Prescriptions.Query()
+            .Include(p => p.Medicine)
+            .Include(p => p.MedicalRecord).ThenInclude(r => r.Patient)
+            .Include(p => p.MedicalRecord).ThenInclude(r => r.Doctor)
+            .Include(p => p.DispensedByUser)
+            .Where(p => p.Status == status)
+            .OrderByDescending(p => p.MedicalRecord.CreatedAt);
+
+        var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+        return items.Select(MapPrescriptionToDto).ToList();
+    }
+
+    public async Task<bool> MarkPrescriptionsAsPaidAsync(Guid medicalRecordId)
+    {
+        var prescriptions = await _uow.Prescriptions.FindAsync(p => p.MedicalRecordId == medicalRecordId && p.Status == PrescriptionStatus.Pending);
+        if (!prescriptions.Any()) return false;
+
+        foreach (var p in prescriptions)
+            p.Status = PrescriptionStatus.Paid;
+
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DispensePrescriptionAsync(Guid prescriptionId, DispensePrescriptionDto dto, string userId)
+    {
+        var prescription = await _uow.Prescriptions.Query()
+            .FirstOrDefaultAsync(p => p.Id == prescriptionId && p.Status == PrescriptionStatus.Paid);
+
+        if (prescription == null) return false;
+
+        var batch = await _uow.InventoryBatches.GetByIdAsync(dto.BatchId);
+        if (batch == null || batch.MedicineId != prescription.MedicineId || batch.Quantity < dto.Quantity)
+            return false;
+
+        batch.Quantity -= dto.Quantity;
+
+        var transaction = new InventoryTransaction
+        {
+            InventoryBatchId = dto.BatchId,
+            TransactionType = TransactionType.Dispensed,
+            Quantity = dto.Quantity,
+            ReferenceType = "Prescription",
+            ReferenceId = prescriptionId,
+            CreatedById = Guid.Parse(userId)
+        };
+        await _uow.InventoryTransactions.AddAsync(transaction);
+
+        prescription.Status = PrescriptionStatus.Completed;
+        prescription.DispensedByUserId = Guid.Parse(userId);
+        prescription.DispensedAt = DateTime.UtcNow;
+        prescription.InventoryBatchId = dto.BatchId;
+
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
+    private static PrescriptionResponseDto MapPrescriptionToDto(Prescription p) => new()
+    {
+        Id = p.Id,
+        MedicalRecordId = p.MedicalRecordId,
+        MedicineId = p.MedicineId,
+        MedicineName = p.Medicine.Name,
+        Dosage = p.Dosage,
+        Frequency = p.Frequency,
+        Duration = p.Duration,
+        Instructions = p.Instructions,
+        Quantity = p.Quantity,
+        Status = p.Status.ToString(),
+        DispensedBy = p.DispensedByUser != null ? $"{p.DispensedByUser.FirstName} {p.DispensedByUser.LastName}" : null,
+        DispensedAt = p.DispensedAt,
+        InventoryBatchId = p.InventoryBatchId
+    };
 
     private static MedicalRecordResponseDto MapToDto(MedicalRecord r) => new()
     {
@@ -131,17 +226,6 @@ public class MedicalRecordService : IMedicalRecordService
         IsConfidential = r.IsConfidential,
         CreatedAt = r.CreatedAt,
         UpdatedAt = r.UpdatedAt,
-        Prescriptions = r.Prescriptions.Select(p => new PrescriptionResponseDto
-        {
-            Id = p.Id,
-            MedicineId = p.MedicineId,
-            MedicineName = p.Medicine.Name,
-            Dosage = p.Dosage,
-            Frequency = p.Frequency,
-            Duration = p.Duration,
-            Instructions = p.Instructions,
-            Quantity = p.Quantity,
-            IsDispensed = p.IsDispensed
-        }).ToList()
+        Prescriptions = r.Prescriptions.Select(MapPrescriptionToDto).ToList()
     };
 }

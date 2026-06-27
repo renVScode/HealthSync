@@ -9,11 +9,7 @@ export function Landing() {
       {/* ── NAV BAR ──────────────────────────────────────── */}
       <nav className="h-16 bg-white border-b border-[#E9ECEF] flex items-center justify-between px-8 lg:px-16 sticky top-0 z-50">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#1A4B61] rounded-lg flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
-          </div>
+          <img src="/healthsync-icon.png" alt="HealthSync" className="w-8 h-8 object-contain" />
           <span className="text-lg font-bold text-[#212529]">HealthSync</span>
         </div>
         <div className="flex items-center gap-4">
@@ -319,11 +315,7 @@ export function Landing() {
           <div className="flex flex-wrap items-start justify-between gap-8 mb-10">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 bg-[#1A4B61] rounded-md flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                  </svg>
-                </div>
+                <img src="/healthsync-icon.png" alt="HealthSync" className="w-7 h-7 object-contain" />
                 <span className="text-sm font-bold text-[#212529]">HealthSync</span>
               </div>
               <p className="text-xs text-[#6C757D] max-w-xs">© 2026 HealthSync. All rights reserved.</p>

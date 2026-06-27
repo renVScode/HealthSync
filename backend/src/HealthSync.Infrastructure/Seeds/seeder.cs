@@ -529,7 +529,7 @@ public static class DatabaseSeeder
                             Duration = "90 days",
                             Instructions = "Take with breakfast and dinner. Do not skip meals.",
                             Quantity = 180,
-                            IsDispensed = false,
+                            Status = PrescriptionStatus.Pending,
                         }
                     ]
                 }

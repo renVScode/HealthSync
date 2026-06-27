@@ -8,4 +8,6 @@ public interface IAuditService
         string? newValues, string? userId,
         string? ipAddress, string? userAgent);
     Task<IEnumerable<AuditLog>> GetLogsAsync(string? entityType, Guid? entityId, DateTime? from, DateTime? to);
+    Task<(IEnumerable<AuditLog> Items, int TotalCount)> GetLogsPaginatedAsync(
+        int page, int pageSize, string? entityType, DateTime? from, DateTime? to, string? search = null);
 }
