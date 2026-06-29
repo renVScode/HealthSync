@@ -247,5 +247,5 @@ export interface AuditLog {
   userAgent?: string;
   createdAt: string;
   userId?: string;
-  user?: { firstName: string; lastName: string };
+  user?: { firstName: string; lastName: string; role: string };
 }

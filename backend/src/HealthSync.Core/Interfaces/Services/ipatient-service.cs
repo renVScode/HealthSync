@@ -5,11 +5,13 @@ namespace HealthSync.Core.Interfaces.Services;
 
 public interface IPatientService
 {
-    Task<PaginatedResult<PatientResponseDto>> GetAllAsync(int page, int pageSize, string? search);
+    Task<PaginatedResult<PatientResponseDto>> GetAllAsync(int page, int pageSize, string? search, bool? isArchived = null);
     Task<PatientResponseDto?> GetByIdAsync(Guid id);
     Task<PatientResponseDto> CreateAsync(CreatePatientDto dto);
     Task<PatientResponseDto?> UpdateAsync(Guid id, UpdatePatientDto dto);
     Task<bool> DeleteAsync(Guid id);
     Task<IEnumerable<PatientResponseDto>> SearchAsync(string query);
     Task<PaginatedResult<PatientResponseDto>> GetByDoctorIdAsync(Guid doctorId, int page, int pageSize, string? search);
+    Task<bool> ArchiveAsync(Guid id);
+    Task<bool> RestoreAsync(Guid id);
 }

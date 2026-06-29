@@ -17,6 +17,8 @@ export function Appointments() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     patientService.getAll(1, 100).then((r) => setPatients(r.data.items));
@@ -34,7 +36,7 @@ export function Appointments() {
   return (
     <div>
       <Card title="Appointments" actions={
-        hasRole('Doctor', 'Receptionist') && <Button onClick={() => setShowModal(true)}>+ New Appointment</Button>
+        hasRole('Receptionist') && <Button onClick={() => setShowModal(true)}>+ New Appointment</Button>
       }>
         <AppointmentCalendar
           events={events}
@@ -43,14 +45,28 @@ export function Appointments() {
           onEventClick={(event) => console.log('Event:', event)}
         />
       </Card>
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Schedule Appointment">
+      <Modal isOpen={showModal} onClose={() => { setShowModal(false); setSubmitError(null); }} title="Schedule Appointment" size="lg">
+        {submitError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+            {submitError}
+          </div>
+        )}
         <AppointmentForm
-          patients={patients.map((p: any) => ({ id: p.id, name: `${p.firstName} ${p.lastName}` }))}
+          patients={patients.map((p: any) => ({ id: p.id, name: `${p.firstName} ${p.lastName}`, phone: p.phone }))}
           doctors={doctors.map((d: any) => ({ id: d.id, name: `Dr. ${d.lastName} (${d.specialization})` }))}
           selectedDate={selectedDate}
+          isLoading={submitting}
           onSubmit={async (data) => {
-            await appointmentService.create(data);
-            setShowModal(false);
+            setSubmitting(true);
+            setSubmitError(null);
+            try {
+              await appointmentService.create(data);
+              setShowModal(false);
+            } catch (err: any) {
+              setSubmitError(err?.response?.data?.message || err?.message || 'Failed to schedule appointment.');
+            } finally {
+              setSubmitting(false);
+            }
           }}
         />
       </Modal>

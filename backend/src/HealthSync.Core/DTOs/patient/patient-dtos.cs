@@ -45,5 +45,6 @@ public class PatientResponseDto
     public string? MedicalHistory { get; set; }
     public string? Allergies { get; set; }
     public DateTime CreatedAt { get; set; }
+    public bool IsArchived { get; set; }
 }
 

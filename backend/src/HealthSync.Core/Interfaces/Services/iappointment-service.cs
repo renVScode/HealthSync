@@ -13,4 +13,6 @@ public interface IAppointmentService
     Task<bool> UpdateStatusAsync(Guid id, AppointmentStatus status, string userId);
     Task<bool> CancelAsync(Guid id);
     Task<List<CalendarEventDto>> GetCalendarEventsAsync(DateTime start, DateTime end, Guid? doctorId);
+    Task<bool> ArchiveAsync(Guid id);
+    Task<bool> RestoreAsync(Guid id);
 }

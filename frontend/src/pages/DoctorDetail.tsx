@@ -43,6 +43,7 @@ export function DoctorDetail() {
     setEditForm({
       firstName: res.data.firstName,
       lastName: res.data.lastName,
+      specialization: res.data.specialization || '',
       phone: res.data.phone || '',
       email: res.data.email || '',
       bio: res.data.bio || '',
@@ -159,6 +160,9 @@ export function DoctorDetail() {
                 <div className="col-span-2"><label className="block text-sm font-medium mb-1">Bio</label>
                   <textarea value={editForm.bio} onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
                             className="w-full px-3 py-2 border border-[#E9ECEF] rounded-md text-sm" rows={3} /></div>
+                <div><label className="block text-sm font-medium mb-1">Specialization</label>
+                  <input value={editForm.specialization} onChange={(e) => setEditForm({...editForm, specialization: e.target.value})}
+                         className="w-full px-3 py-2 border border-[#E9ECEF] rounded-md text-sm" /></div>
                 <div><label className="block text-sm font-medium mb-1">Consultation Fee (₱)</label>
                   <input type="number" value={editForm.consultationFee} onChange={(e) => setEditForm({...editForm, consultationFee: Number(e.target.value)})}
                          className="w-full px-3 py-2 border border-[#E9ECEF] rounded-md text-sm" /></div>

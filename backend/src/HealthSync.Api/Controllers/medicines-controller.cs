@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using System.Text.Json;
 using HealthSync.Core.DTOs.Medicine;
 using HealthSync.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -11,10 +13,12 @@ namespace HealthSync.Api.Controllers;
 public class MedicinesController : ControllerBase
 {
     private readonly IMedicineService _medicineService;
+    private readonly IAuditService _auditService;
 
-    public MedicinesController(IMedicineService medicineService)
+    public MedicinesController(IMedicineService medicineService, IAuditService auditService)
     {
         _medicineService = medicineService;
+        _auditService = auditService;
     }
 
     [HttpGet]
@@ -37,6 +41,13 @@ public class MedicinesController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateMedicineDto dto)
     {
         var result = await _medicineService.CreateAsync(dto);
+
+        await _auditService.LogAsync("create", "medicine", result.Id, null,
+            JsonSerializer.Serialize(result),
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
@@ -44,8 +55,17 @@ public class MedicinesController : ControllerBase
     [Authorize(Roles = "Admin,Pharmacist")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateMedicineDto dto)
     {
+        var oldMedicine = await _medicineService.GetByIdAsync(id);
         var result = await _medicineService.UpdateAsync(id, dto);
         if (result == null) return NotFound();
+
+        await _auditService.LogAsync("update", "medicine", id,
+            oldMedicine != null ? JsonSerializer.Serialize(oldMedicine) : null,
+            JsonSerializer.Serialize(result),
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
         return Ok(result);
     }
 
@@ -53,7 +73,15 @@ public class MedicinesController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(Guid id)
     {
+        var oldMedicine = await _medicineService.GetByIdAsync(id);
         await _medicineService.DeactivateAsync(id);
+
+        await _auditService.LogAsync("deactivate", "medicine", id,
+            oldMedicine != null ? JsonSerializer.Serialize(oldMedicine) : null, null,
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
         return NoContent();
     }
 }

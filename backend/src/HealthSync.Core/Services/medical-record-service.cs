@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using HealthSync.Core.DTOs;
 using HealthSync.Core.DTOs.MedicalRecord;
 using HealthSync.Core.Entities;
 using HealthSync.Core.Enums;
@@ -14,6 +15,33 @@ public class MedicalRecordService : IMedicalRecordService
     public MedicalRecordService(IUnitOfWork uow)
     {
         _uow = uow;
+    }
+
+    public async Task<PaginatedResult<MedicalRecordResponseDto>> GetAllAsync(int page, int pageSize, bool? isArchived = null)
+    {
+        var query = _uow.MedicalRecords.Query()
+            .Include(r => r.Patient)
+            .Include(r => r.Doctor)
+            .Include(r => r.Prescriptions).ThenInclude(p => p.Medicine)
+            .Include(r => r.Prescriptions).ThenInclude(p => p.DispensedByUser)
+            .AsQueryable();
+
+        if (isArchived.HasValue)
+            query = query.Where(r => r.IsArchived == isArchived.Value);
+
+        var total = await query.CountAsync();
+        var items = await query.OrderByDescending(r => r.CreatedAt)
+                               .Skip((page - 1) * pageSize)
+                               .Take(pageSize)
+                               .ToListAsync();
+
+        return new PaginatedResult<MedicalRecordResponseDto>
+        {
+            Items = items.Select(MapToDto).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<List<MedicalRecordResponseDto>> GetByPatientIdAsync(Guid patientId)
@@ -161,6 +189,26 @@ public class MedicalRecordService : IMedicalRecordService
         return true;
     }
 
+    public async Task<bool> ArchiveAsync(Guid id)
+    {
+        var record = await _uow.MedicalRecords.GetByIdAsync(id);
+        if (record == null) return false;
+        record.IsArchived = true;
+        record.UpdatedAt = DateTime.UtcNow;
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> RestoreAsync(Guid id)
+    {
+        var record = await _uow.MedicalRecords.GetByIdAsync(id);
+        if (record == null) return false;
+        record.IsArchived = false;
+        record.UpdatedAt = DateTime.UtcNow;
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
     public async Task<bool> DispensePrescriptionAsync(Guid prescriptionId, DispensePrescriptionDto dto, string userId)
     {
         var prescription = await _uow.Prescriptions.Query()
@@ -224,6 +272,7 @@ public class MedicalRecordService : IMedicalRecordService
         Treatment = r.Treatment,
         Notes = r.Notes,
         IsConfidential = r.IsConfidential,
+        IsArchived = r.IsArchived,
         CreatedAt = r.CreatedAt,
         UpdatedAt = r.UpdatedAt,
         Prescriptions = r.Prescriptions.Select(MapPrescriptionToDto).ToList()

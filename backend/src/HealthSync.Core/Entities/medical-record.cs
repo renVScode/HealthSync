@@ -11,6 +11,7 @@ public class MedicalRecord
     public string? Treatment { get; set; }
     public string? Notes { get; set; }
     public bool IsConfidential { get; set; } = false;
+    public bool IsArchived { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

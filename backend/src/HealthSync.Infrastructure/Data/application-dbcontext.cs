@@ -43,6 +43,7 @@ public class ApplicationDbContext : DbContext
             entity.HasIndex(u => u.UserName).IsUnique();
             entity.HasIndex(u => u.Role);
             entity.HasIndex(u => u.IsActive);
+            entity.HasIndex(u => u.IsArchived);
             entity.HasIndex(u => u.Email);
         });
 

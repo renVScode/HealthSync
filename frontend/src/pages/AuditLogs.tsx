@@ -3,6 +3,7 @@ import { Card } from '../components/common/Card';
 import { DataTable } from '../components/common/DataTable';
 import { Modal } from '../components/common/Modal';
 import { SearchBar } from '../components/common/SearchBar';
+import { JsonViewer } from '../components/common/JsonViewer';
 import { auditService } from '../services/auditService';
 import { useDebounce } from '../hooks/useDebounce';
 import { AuditLog } from '../types';
@@ -20,7 +21,7 @@ export function AuditLogs() {
 
   const fetchLogs = useCallback(async () => {
     const params: any = { page, pageSize: PAGE_SIZE };
-    if (entityFilter) params.entityType = entityFilter;
+    if (entityFilter) params.entityType = entityFilter.toLowerCase();
     if (debouncedSearch) params.search = debouncedSearch;
     const res = await auditService.getAll(params);
     setLogs(res.data.items);
@@ -38,7 +39,7 @@ export function AuditLogs() {
     { key: 'ipAddress', header: 'IP Address', render: (l: AuditLog) => l.ipAddress || '-' },
   ];
 
-  const entityTypes = ['Patient', 'Appointment', 'Billing', 'User', 'MedicalRecord', 'InventoryBatch', 'Prescription'];
+  const entityTypes = ['Patient', 'Appointment', 'Doctor', 'Billing', 'User', 'MedicalRecord', 'InventoryBatch', 'Prescription', 'Medicine'];
 
   return (
     <div className="space-y-4">
@@ -79,22 +80,12 @@ export function AuditLogs() {
               <div><span className="text-[#6C757D]">Action:</span> <span className="font-medium">{selected.action}</span></div>
               <div><span className="text-[#6C757D]">Entity:</span> <span className="font-medium">{selected.entityType}</span></div>
               <div><span className="text-[#6C757D]">Entity ID:</span> <span className="font-medium">{selected.entityId || '-'}</span></div>
-              <div><span className="text-[#6C757D]">User:</span> <span className="font-medium">{selected.user ? `${selected.user.firstName} ${selected.user.lastName}` : '-'}</span></div>
+              <div><span className="text-[#6C757D]">User:</span> <span className="font-medium">{selected.user ? `${selected.user.firstName} ${selected.user.lastName} (${selected.user.role})` : '-'}</span></div>
               <div><span className="text-[#6C757D]">IP Address:</span> <span className="font-medium">{selected.ipAddress || '-'}</span></div>
               <div><span className="text-[#6C757D]">Timestamp:</span> <span className="font-medium">{formatDate(selected.createdAt)}</span></div>
             </div>
-            {selected.oldValues && (
-              <div>
-                <span className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">Old Values</span>
-                <pre className="bg-[#F8F9FA] border border-[#E9ECEF] rounded p-3 text-xs overflow-auto max-h-40">{JSON.stringify(JSON.parse(selected.oldValues), null, 2)}</pre>
-              </div>
-            )}
-            {selected.newValues && (
-              <div>
-                <span className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">New Values</span>
-                <pre className="bg-[#F8F9FA] border border-[#E9ECEF] rounded p-3 text-xs overflow-auto max-h-40">{JSON.stringify(JSON.parse(selected.newValues), null, 2)}</pre>
-              </div>
-            )}
+            <JsonViewer data={selected.oldValues} label="Old Values" />
+            <JsonViewer data={selected.newValues} label="New Values" />
           </div>
         )}
       </Modal>

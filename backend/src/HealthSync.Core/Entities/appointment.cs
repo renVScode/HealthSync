@@ -14,6 +14,7 @@ public class Appointment
     public string? Reason { get; set; }
     public string? Notes { get; set; }
     public string? CancellationReason { get; set; }
+    public bool IsArchived { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

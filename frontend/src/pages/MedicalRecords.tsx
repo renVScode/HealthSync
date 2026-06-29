@@ -4,6 +4,7 @@ import { Button } from '../components/common/Button';
 import { DataTable } from '../components/common/DataTable';
 import { SearchBar } from '../components/common/SearchBar';
 import { Modal } from '../components/common/Modal';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { patientService } from '../services/patientService';
 import { medicalRecordService } from '../services/medicalRecordService';
 import { medicineService } from '../services/medicineService';
@@ -23,6 +24,7 @@ export function MedicalRecords() {
   const [records, setRecords] = useState<any[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [confirm, setConfirm] = useState<{ message: string; action: () => void } | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewRecords, setViewRecords] = useState<any[]>([]);
   const [viewPatientName, setViewPatientName] = useState('');
@@ -92,6 +94,24 @@ export function MedicalRecords() {
     setPrescriptionRows(rows);
   };
 
+  const handleMarkPaid = async () => {
+    if (!selectedRecord) return;
+    try {
+      await medicalRecordService.markPrescriptionsPaid(selectedRecord.id);
+      const res = await medicalRecordService.getByPatient(selectedPatient.id);
+      setRecords(Array.isArray(res.data) ? res.data : []);
+      setSelectedRecord(res.data.find((r: any) => r.id === selectedRecord.id) || null);
+    } catch { }
+  };
+
+  const handleViewMarkPaid = async (recordId: string) => {
+    try {
+      await medicalRecordService.markPrescriptionsPaid(recordId);
+      const res = await medicalRecordService.getByPatient(selectedPatient!.id);
+      setViewRecords(Array.isArray(res.data) ? res.data : []);
+    } catch { }
+  };
+
   const handleSubmit = async () => {
     if (!form.diagnosis.trim()) return;
     setSubmitting(true);
@@ -135,10 +155,31 @@ export function MedicalRecords() {
             page={patientPage}
             totalPages={Math.ceil(patientTotal / PAGE_SIZE)}
             onPageChange={setPatientPage}
-            onRowClick={(p) => isAdmin ? openViewModal(p) : canCreate ? openCreateModal(p) : setSelectedPatient(p)}
+            onRowClick={(p) => (isAdmin || !canCreate) ? openViewModal(p) : openCreateModal(p)}
           />
         </div>
       </Card>
+
+      {selectedPatient && (
+        <Card title={`Medical Records - ${selectedPatient.firstName} ${selectedPatient.lastName}`}
+          actions={canCreate && <Button size="sm" onClick={() => openCreateModal(selectedPatient)}>+ New Record</Button>}
+        >
+          {records.length === 0 ? (
+            <p className="text-sm text-[#6C757D] py-4 text-center">No medical records for this patient</p>
+          ) : (
+            <DataTable
+              columns={[
+                { key: 'diagnosis', header: 'Diagnosis' },
+                { key: 'doctorName', header: 'Doctor' },
+                { key: 'createdAt', header: 'Date', render: (r: any) => formatDate(r.createdAt) },
+                { key: 'isConfidential', header: 'Confidential', render: (r: any) => r.isConfidential ? 'Yes' : 'No' },
+              ]}
+              data={records}
+              onRowClick={(r) => setSelectedRecord(r)}
+            />
+          )}
+        </Card>
+      )}
 
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="New Medical Record" size="lg"
         footer={
@@ -214,7 +255,11 @@ export function MedicalRecords() {
       </Modal>
 
       <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} title={`Medical Records - ${viewPatientName}`} size="lg"
-        footer={<Button size="sm" variant="secondary" onClick={() => setShowViewModal(false)}>Close</Button>}
+        footer={
+          <div className="flex gap-2 justify-end w-full">
+            <Button size="sm" variant="secondary" onClick={() => setShowViewModal(false)}>Close</Button>
+          </div>
+        }
       >
         {viewRecords.length === 0 ? (
           <p className="text-sm text-[#6C757D] py-4 text-center">No medical records found for this patient</p>
@@ -255,11 +300,55 @@ export function MedicalRecords() {
                 <div className="text-xs text-[#6C757D]">
                   {record.isConfidential ? 'Confidential' : 'Non-confidential'}
                 </div>
+                {record.prescriptions?.length > 0 && (
+                  <div>
+                    <span className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">Prescriptions</span>
+                    {record.prescriptions.map((px: any) => (
+                      <div key={px.id} className="flex items-center justify-between p-2 bg-[#F8F9FA] rounded mb-1 text-sm">
+                        <span className="font-medium">{px.medicineName}</span>
+                        <span className="text-[#6C757D]">{px.dosage} - {px.frequency}{px.duration ? ` for ${px.duration}` : ''} ({px.quantity} {px.quantity > 1 ? 'units' : 'unit'})</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded ${px.status === 'Completed' ? 'bg-[#D4EDDA] text-[#155724]' :
+                            px.status === 'Paid' ? 'bg-[#FFF3CD] text-[#856404]' :
+                              'bg-[#E2E3E5] text-[#383D41]'
+                            }`}>{px.status}</span>
+                          {px.status === 'Pending' && hasRole('Receptionist') && (
+                            <button onClick={() => handleViewMarkPaid(record.id)} className="text-xs px-2 py-0.5 rounded bg-[#2C7DA0] text-white hover:bg-[#1A5A7A]">
+                              Mark as Paid
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {hasRole('Admin') && (
+                  <div className="pt-2 flex justify-end">
+                    {record.isArchived ? (
+                      <button onClick={() => setConfirm({ message: 'Restore this medical record?', action: async () => { await medicalRecordService.restore(record.id); const res = await medicalRecordService.getByPatient(selectedPatient!.id); setViewRecords(Array.isArray(res.data) ? res.data : []); } })} className="p-1.5 rounded bg-[#28A745] text-white hover:bg-[#1E7E34]" title="Restore">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></svg>
+                      </button>
+                    ) : (
+                      <button onClick={() => setConfirm({ message: 'Archive this medical record?', action: async () => { await medicalRecordService.archive(record.id); const res = await medicalRecordService.getByPatient(selectedPatient!.id); setViewRecords(Array.isArray(res.data) ? res.data : []); } })} className="p-1.5 rounded bg-[#FFC107] text-black hover:bg-[#E0A800]" title="Archive">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" /></svg>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!confirm}
+        title="Confirm"
+        message={confirm?.message || ''}
+        confirmLabel={confirm?.message.startsWith('Restore') ? 'Restore' : 'Archive'}
+        onConfirm={() => { confirm?.action(); setConfirm(null); }}
+        onCancel={() => setConfirm(null)}
+      />
 
       <Modal isOpen={!!selectedRecord} onClose={() => setSelectedRecord(null)} title="Medical Record Details" size="lg"
         footer={selectedRecord ? <Button size="sm" onClick={() => {
@@ -324,21 +413,28 @@ export function MedicalRecords() {
                 <p className="text-sm bg-[#F8F9FA] p-3 rounded">{selectedRecord.notes}</p>
               </div>
             )}
-            {selectedRecord.prescriptions?.length > 0 && (
-              <div>
-                <span className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">Prescriptions</span>
-                {selectedRecord.prescriptions.map((px: any) => (
-                  <div key={px.id} className="flex items-center justify-between p-2 bg-[#F8F9FA] rounded mb-1 text-sm">
-                    <span className="font-medium">{px.medicineName}</span>
-                    <span className="text-[#6C757D]">{px.dosage} - {px.frequency}{px.duration ? ` for ${px.duration}` : ''} ({px.quantity} {px.quantity > 1 ? 'units' : 'unit'})</span>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded ${px.status === 'Completed' ? 'bg-[#D4EDDA] text-[#155724]' :
-                      px.status === 'Paid' ? 'bg-[#FFF3CD] text-[#856404]' :
-                        'bg-[#E2E3E5] text-[#383D41]'
-                      }`}>{px.status}</span>
+                {selectedRecord.prescriptions?.length > 0 && (
+                  <div>
+                    <span className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">Prescriptions</span>
+                    {selectedRecord.prescriptions.map((px: any) => (
+                      <div key={px.id} className="flex items-center justify-between p-2 bg-[#F8F9FA] rounded mb-1 text-sm">
+                        <span className="font-medium">{px.medicineName}</span>
+                        <span className="text-[#6C757D]">{px.dosage} - {px.frequency}{px.duration ? ` for ${px.duration}` : ''} ({px.quantity} {px.quantity > 1 ? 'units' : 'unit'})</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded ${px.status === 'Completed' ? 'bg-[#D4EDDA] text-[#155724]' :
+                            px.status === 'Paid' ? 'bg-[#FFF3CD] text-[#856404]' :
+                              'bg-[#E2E3E5] text-[#383D41]'
+                            }`}>{px.status}</span>
+                          {px.status === 'Pending' && hasRole('Receptionist') && (
+                            <button onClick={handleMarkPaid} className="text-xs px-2 py-0.5 rounded bg-[#2C7DA0] text-white hover:bg-[#1A5A7A]">
+                              Mark as Paid
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                )}
           </div>
         )}
       </Modal>

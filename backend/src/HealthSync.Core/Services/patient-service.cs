@@ -16,7 +16,7 @@ public class PatientService : IPatientService
         _uow = uow;
     }
 
-    public async Task<PaginatedResult<PatientResponseDto>> GetAllAsync(int page, int pageSize, string? search)
+    public async Task<PaginatedResult<PatientResponseDto>> GetAllAsync(int page, int pageSize, string? search, bool? isArchived = null)
     {
         var query = _uow.Patients.Query();
         if (!string.IsNullOrWhiteSpace(search))
@@ -26,6 +26,9 @@ public class PatientService : IPatientService
                                   || p.LastName.ToLower().Contains(term)
                                   || p.Phone.Contains(term));
         }
+
+        if (isArchived.HasValue)
+            query = query.Where(p => p.IsArchived == isArchived.Value);
 
         var total = await query.CountAsync();
         var items = await query.OrderByDescending(p => p.CreatedAt)
@@ -129,6 +132,26 @@ public class PatientService : IPatientService
         };
     }
 
+    public async Task<bool> ArchiveAsync(Guid id)
+    {
+        var patient = await _uow.Patients.GetByIdAsync(id);
+        if (patient == null) return false;
+        patient.IsArchived = true;
+        patient.UpdatedAt = DateTime.UtcNow;
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> RestoreAsync(Guid id)
+    {
+        var patient = await _uow.Patients.GetByIdAsync(id);
+        if (patient == null) return false;
+        patient.IsArchived = false;
+        patient.UpdatedAt = DateTime.UtcNow;
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
     public async Task<IEnumerable<PatientResponseDto>> SearchAsync(string query)
     {
         var term = query.ToLower();
@@ -155,6 +178,7 @@ public class PatientService : IPatientService
         EmergencyPhone = p.EmergencyPhone,
         MedicalHistory = p.MedicalHistory,
         Allergies = p.Allergies,
-        CreatedAt = p.CreatedAt
+        CreatedAt = p.CreatedAt,
+        IsArchived = p.IsArchived
     };
 }

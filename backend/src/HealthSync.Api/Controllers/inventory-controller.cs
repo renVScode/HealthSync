@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using HealthSync.Core.DTOs.Medicine;
 using HealthSync.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -12,10 +13,12 @@ namespace HealthSync.Api.Controllers;
 public class InventoryController : ControllerBase
 {
     private readonly IInventoryService _inventoryService;
+    private readonly IAuditService _auditService;
 
-    public InventoryController(IInventoryService inventoryService)
+    public InventoryController(IInventoryService inventoryService, IAuditService auditService)
     {
         _inventoryService = inventoryService;
+        _auditService = auditService;
     }
 
     [HttpGet]
@@ -44,6 +47,12 @@ public class InventoryController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var result = await _inventoryService.AddBatchAsync(dto, userId!);
+
+        await _auditService.LogAsync("create", "inventory-batch", result.Id, null,
+            JsonSerializer.Serialize(result),
+            userId, HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
@@ -54,7 +63,47 @@ public class InventoryController : ControllerBase
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var result = await _inventoryService.DispenseAsync(id, dto, userId!);
         if (!result) return BadRequest(new { message = "Insufficient stock" });
+
+        await _auditService.LogAsync("dispense", "inventory-batch", id, null,
+            JsonSerializer.Serialize(dto),
+            userId, HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
         return Ok(new { message = "Dispensed successfully" });
+    }
+
+    [HttpPatch("{id:guid}/archive")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Archive(Guid id)
+    {
+        var oldBatch = await _inventoryService.GetByIdAsync(id);
+        var result = await _inventoryService.ArchiveBatchAsync(id);
+        if (!result) return NotFound();
+
+        await _auditService.LogAsync("archive", "inventory-batch", id,
+            oldBatch != null ? JsonSerializer.Serialize(oldBatch) : null, null,
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
+        return NoContent();
+    }
+
+    [HttpPatch("{id:guid}/restore")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Restore(Guid id)
+    {
+        var result = await _inventoryService.RestoreBatchAsync(id);
+        if (!result) return NotFound();
+
+        var batch = await _inventoryService.GetByIdAsync(id);
+        await _auditService.LogAsync("restore", "inventory-batch", id, null,
+            batch != null ? JsonSerializer.Serialize(batch) : null,
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
+        return Ok(batch);
     }
 
     [HttpGet("low-stock")]

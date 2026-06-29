@@ -1,7 +1,18 @@
 export function printHtml(title: string, html: string) {
-  const win = window.open('', '_blank');
-  if (!win) return;
-  win.document.write(`<!DOCTYPE html><html><head><title>${title}</title>
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.top = '-9999px';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow?.document;
+  if (!doc) {
+    document.body.removeChild(iframe);
+    return;
+  }
+
+  doc.write(`<!DOCTYPE html><html><head><title>${title}</title>
     <style>
       body { font-family: Arial, Helvetica, sans-serif; padding: 30px; color: #212529; }
       h1 { font-size: 20px; margin-bottom: 4px; }
@@ -20,7 +31,11 @@ export function printHtml(title: string, html: string) {
     ${html}
     <div class="footer">HealthSync - Generated on ${new Date().toLocaleString('en-PH')}</div>
     </body></html>`);
-  win.document.close();
-  win.focus();
-  setTimeout(() => win.print(), 300);
+  doc.close();
+  iframe.contentWindow?.focus();
+  iframe.contentWindow?.print();
+
+  setTimeout(() => {
+    if (document.body.contains(iframe)) document.body.removeChild(iframe);
+  }, 1000);
 }

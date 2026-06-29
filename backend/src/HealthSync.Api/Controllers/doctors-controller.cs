@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using HealthSync.Core.DTOs.Doctor;
 using HealthSync.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -13,11 +14,13 @@ public class DoctorsController : ControllerBase
 {
     private readonly IDoctorService _doctorService;
     private readonly IWebHostEnvironment _env;
+    private readonly IAuditService _auditService;
 
-    public DoctorsController(IDoctorService doctorService, IWebHostEnvironment env)
+    public DoctorsController(IDoctorService doctorService, IWebHostEnvironment env, IAuditService auditService)
     {
         _doctorService = doctorService;
         _env = env;
+        _auditService = auditService;
     }
 
     [HttpGet]
@@ -55,6 +58,13 @@ public class DoctorsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateDoctorDto dto)
     {
         var result = await _doctorService.CreateAsync(dto);
+
+        await _auditService.LogAsync("create", "doctor", result.Id, null,
+            JsonSerializer.Serialize(result),
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
@@ -62,8 +72,17 @@ public class DoctorsController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateDoctorDto dto)
     {
+        var oldDoctor = await _doctorService.GetByIdAsync(id);
         var result = await _doctorService.UpdateAsync(id, dto);
         if (result == null) return NotFound();
+
+        await _auditService.LogAsync("update", "doctor", id,
+            oldDoctor != null ? JsonSerializer.Serialize(oldDoctor) : null,
+            JsonSerializer.Serialize(result),
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
         return Ok(result);
     }
 
@@ -81,6 +100,13 @@ public class DoctorsController : ControllerBase
             return Forbid();
 
         var result = await _doctorService.UpdateAsync(id, dto);
+
+        await _auditService.LogAsync("update-profile", "doctor", id,
+            JsonSerializer.Serialize(doctor),
+            JsonSerializer.Serialize(result),
+            userId, HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
         return Ok(result);
     }
 
@@ -120,6 +146,13 @@ public class DoctorsController : ControllerBase
             updateDto.ProfileImageUrl = imageUrl;
 
         await _doctorService.UpdateAsync(id, updateDto);
+
+        await _auditService.LogAsync("upload-image", "doctor", id,
+            JsonSerializer.Serialize(doctor),
+            JsonSerializer.Serialize(new { ImageUrl = imageUrl, ImageType = type }),
+            userId, HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
         return Ok(new { url = imageUrl });
     }
 
@@ -134,7 +167,16 @@ public class DoctorsController : ControllerBase
     [Authorize(Roles = "Admin,Doctor")]
     public async Task<IActionResult> UpdateAvailability(Guid id, [FromBody] List<UpsertAvailabilityDto> dtos)
     {
+        var oldAvailability = await _doctorService.GetAvailabilityAsync(id);
         await _doctorService.UpdateAvailabilityAsync(id, dtos);
+
+        await _auditService.LogAsync("update-availability", "doctor", id,
+            oldAvailability != null ? JsonSerializer.Serialize(oldAvailability) : null,
+            JsonSerializer.Serialize(dtos),
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
         return NoContent();
     }
 
@@ -150,6 +192,13 @@ public class DoctorsController : ControllerBase
     public async Task<IActionResult> RequestTimeOff(Guid id, [FromBody] CreateTimeOffDto dto)
     {
         var result = await _doctorService.RequestTimeOffAsync(id, dto);
+
+        await _auditService.LogAsync("create-time-off", "doctor", id, null,
+            JsonSerializer.Serialize(result),
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
         return Ok(result);
     }
 

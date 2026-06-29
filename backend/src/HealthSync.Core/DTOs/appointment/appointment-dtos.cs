@@ -39,6 +39,7 @@ public class AppointmentResponseDto
     public string? Notes { get; set; }
     public string? CancellationReason { get; set; }
     public DateTime CreatedAt { get; set; }
+    public bool IsArchived { get; set; }
 }
 
 public class AppointmentFilterDto
@@ -48,6 +49,7 @@ public class AppointmentFilterDto
     public AppointmentStatus? Status { get; set; }
     public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }
+    public bool? IsArchived { get; set; }
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 20;
 }

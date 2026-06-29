@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using HealthSync.Core.DTOs.Auth;
 using HealthSync.Core.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -11,10 +12,12 @@ namespace HealthSync.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IAuditService _auditService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IAuditService auditService)
     {
         _authService = authService;
+        _auditService = auditService;
     }
 
     [HttpPost("login")]
@@ -41,6 +44,14 @@ public class AuthController : ControllerBase
         var result = await _authService.RegisterAsync(request);
         if (!result.Success)
             return BadRequest(new { message = result.ErrorMessage });
+
+        var userId = Guid.Parse(result.UserId!);
+
+        await _auditService.LogAsync("register", "user", userId, null,
+            JsonSerializer.Serialize(request),
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
 
         return Ok(new { message = "User created successfully", userId = result.UserId });
     }

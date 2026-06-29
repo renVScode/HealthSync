@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using HealthSync.Core.DTOs;
 using HealthSync.Core.DTOs.Auth;
+using HealthSync.Core.Entities;
 using HealthSync.Core.Entities.Identity;
 using HealthSync.Core.Enums;
 using HealthSync.Core.Interfaces;
@@ -89,6 +90,21 @@ public class AuthService : IAuthService
         await _uow.Users.AddAsync(user);
         await _uow.SaveChangesAsync();
 
+        if (role == UserRole.Doctor)
+        {
+            var doctor = new Doctor
+            {
+                UserId = user.Id,
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                Email = request.Email,
+                Phone = request.PhoneNumber,
+                IsActive = true
+            };
+            await _uow.Doctors.AddAsync(doctor);
+            await _uow.SaveChangesAsync();
+        }
+
         return new AuthResultDto { Success = true, UserId = user.Id.ToString() };
     }
 
@@ -137,7 +153,7 @@ public class AuthService : IAuthService
         return users.Select(MapToUserInfo).ToList();
     }
 
-    public async Task<PaginatedResult<UserInfoDto>> GetAllUsersAsync(int page, int pageSize, string? search)
+    public async Task<PaginatedResult<UserInfoDto>> GetAllUsersAsync(int page, int pageSize, string? search, bool? isArchived = null)
     {
         var query = _uow.Users.Query();
 
@@ -149,6 +165,9 @@ public class AuthService : IAuthService
                                   || u.Email!.ToLower().Contains(term)
                                   || u.UserName.ToLower().Contains(term));
         }
+
+        if (isArchived.HasValue)
+            query = query.Where(u => u.IsArchived == isArchived.Value);
 
         var total = await query.CountAsync();
         var items = await query.OrderBy(u => u.LastName)
@@ -173,9 +192,12 @@ public class AuthService : IAuthService
         if (dto.FirstName != null) user.FirstName = dto.FirstName;
         if (dto.LastName != null) user.LastName = dto.LastName;
         if (dto.Email != null) user.Email = dto.Email;
+        if (dto.Username != null) user.UserName = dto.Username;
         if (dto.PhoneNumber != null) user.PhoneNumber = dto.PhoneNumber;
         if (dto.Role != null && Enum.TryParse<UserRole>(dto.Role, true, out var role))
             user.Role = role;
+        if (!string.IsNullOrWhiteSpace(dto.Password))
+            user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
 
         user.UpdatedAt = DateTime.UtcNow;
         await _uow.SaveChangesAsync();
@@ -188,6 +210,29 @@ public class AuthService : IAuthService
         if (user == null) return false;
 
         user.IsActive = isActive;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> ArchiveAsync(Guid id)
+    {
+        var user = await _uow.Users.GetByIdAsync(id);
+        if (user == null) return false;
+
+        user.IsArchived = true;
+        user.IsActive = false;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> RestoreAsync(Guid id)
+    {
+        var user = await _uow.Users.GetByIdAsync(id);
+        if (user == null) return false;
+
+        user.IsArchived = false;
         user.UpdatedAt = DateTime.UtcNow;
         await _uow.SaveChangesAsync();
         return true;
@@ -229,12 +274,14 @@ public class AuthService : IAuthService
         return new UserInfoDto
         {
             Id = user.Id.ToString(),
+            UserName = user.UserName ?? string.Empty,
             FirstName = user.FirstName,
             LastName = user.LastName,
             Email = user.Email ?? string.Empty,
             PhoneNumber = user.PhoneNumber,
             Role = user.Role.ToString(),
-            IsActive = user.IsActive
+            IsActive = user.IsActive,
+            IsArchived = user.IsArchived
         };
     }
 }

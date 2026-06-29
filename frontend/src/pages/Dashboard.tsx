@@ -111,7 +111,7 @@ export function Dashboard() {
     const loadStats = async () => {
       try {
         const summary = await reportService.getAppointmentSummary();
-        const revenue = hasRole('Admin') || hasRole('Receptionist') ? await reportService.getRevenue() : null;
+        const revenue = hasRole('Admin') || hasRole('Receptionist') || hasRole('Doctor') ? await reportService.getRevenue() : null;
         const inventory = hasRole('Pharmacist') ? await reportService.getInventorySummary() : null;
         const perf = hasRole('Admin') ? await reportService.getDoctorPerformance() : null;
         setStats({ summary: summary.data, revenue: revenue?.data, inventory: inventory?.data, perf: perf?.data });

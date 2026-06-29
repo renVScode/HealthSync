@@ -13,4 +13,6 @@ public interface IInventoryService
     Task<bool> DispenseAsync(Guid batchId, DispenseMedicineDto dto, string userId);
     Task<IEnumerable<LowStockItemDto>> GetLowStockItemsAsync();
     Task<IEnumerable<InventoryTransaction>> GetTransactionsAsync(DateTime? from, DateTime? to);
+    Task<bool> ArchiveBatchAsync(Guid id);
+    Task<bool> RestoreBatchAsync(Guid id);
 }

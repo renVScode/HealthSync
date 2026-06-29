@@ -157,6 +157,26 @@ public class InventoryService : IInventoryService
         return true;
     }
 
+    public async Task<bool> ArchiveBatchAsync(Guid id)
+    {
+        var batch = await _uow.InventoryBatches.GetByIdAsync(id);
+        if (batch == null) return false;
+        batch.IsArchived = true;
+        batch.UpdatedAt = DateTime.UtcNow;
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> RestoreBatchAsync(Guid id)
+    {
+        var batch = await _uow.InventoryBatches.GetByIdAsync(id);
+        if (batch == null) return false;
+        batch.IsArchived = false;
+        batch.UpdatedAt = DateTime.UtcNow;
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
     public async Task<IEnumerable<LowStockItemDto>> GetLowStockItemsAsync()
     {
         var items = await _uow.Medicines.Query()

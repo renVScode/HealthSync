@@ -7,8 +7,10 @@ export const authService = {
   refresh: (refreshToken: string) => api.post('/auth/refresh', { refreshToken }),
   logout: () => api.post('/auth/logout'),
   getMe: () => api.get<UserInfo>('/auth/me'),
-  getAllUsers: (page?: number, pageSize?: number, search?: string) =>
-    api.get<any>('/users', { params: { page, pageSize, search } }),
+  getAllUsers: (page?: number, pageSize?: number, search?: string, isArchived?: boolean) =>
+    api.get<any>('/users', { params: { page, pageSize, search, isArchived } }),
   updateUser: (id: string, data: any) => api.put(`/users/${id}`, data),
   toggleActivation: (id: string, isActive: boolean) => api.patch(`/users/${id}/activate`, { isActive }),
+  archive: (id: string) => api.patch(`/users/${id}/archive`),
+  restore: (id: string) => api.patch(`/users/${id}/restore`),
 };

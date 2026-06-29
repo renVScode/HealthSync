@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../components/common/Card';
 import { DataTable } from '../components/common/DataTable';
@@ -13,7 +13,7 @@ import { PAGE_SIZE } from '../utils/constants';
 
 export function Doctors() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, hasRole } = useAuth();
   const [doctors, setDoctors] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -22,33 +22,39 @@ export function Doctors() {
   const [redirecting, setRedirecting] = useState(false);
   const debouncedSearch = useDebounce(search);
 
-  useEffect(() => {
-    const load = async () => {
-      const res = await doctorService.getAll(page, PAGE_SIZE, debouncedSearch || undefined);
-      const data = res.data;
-      if (data && Array.isArray(data)) {
-        setDoctors(data);
-        setTotal(0);
-      } else if (data?.items) {
-        setDoctors(data.items);
-        setTotal(data.totalCount);
-      }
-    };
+  const loadDoctors = useCallback(async () => {
+    const res = await doctorService.getAll(page, PAGE_SIZE, debouncedSearch || undefined);
+    const data = res.data;
+    if (data && Array.isArray(data)) {
+      setDoctors(data);
+      setTotal(0);
+    } else if (data?.items) {
+      setDoctors(data.items);
+      setTotal(data.totalCount);
+    }
+  }, [page, debouncedSearch]);
 
+  useEffect(() => {
     if (user?.role === 'Doctor') {
       setRedirecting(true);
       doctorService.getMyProfile().then((res) => {
         navigate(`/doctors/${res.data.id}`, { replace: true });
       }).catch(() => {
         setRedirecting(false);
-        load();
+        loadDoctors();
       });
       return;
     }
-    load();
-  }, [page, debouncedSearch, user, navigate]);
+    loadDoctors();
+  }, [loadDoctors, user, navigate]);
 
   if (redirecting) return <LoadingSpinner />;
+
+  const handleToggleActive = async (d: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await doctorService.update(d.id, { isActive: !d.isActive });
+    await loadDoctors();
+  };
 
   const columns = [
     { key: 'name', header: 'Name', render: (d: any) => (
@@ -76,6 +82,15 @@ export function Doctors() {
     )},
     { key: 'phone', header: 'Phone' },
     { key: 'consultationFee', header: 'Fee', render: (d: any) => formatCurrency(d.consultationFee) },
+    ...(hasRole('Admin') ? [{
+      key: 'isActive' as const, header: 'Active', render: (d: any) => (
+        <button onClick={(e) => handleToggleActive(d, e)}
+          className={`text-xs px-2 py-0.5 rounded font-semibold ${d.isActive ? 'bg-[#D4EDDA] text-[#155724] hover:bg-[#C3E6CB]' : 'bg-[#F8D7DA] text-[#721C24] hover:bg-[#F5C6CB]'}`}
+        >
+          {d.isActive ? 'Active' : 'Inactive'}
+        </button>
+      )
+    }] : []),
   ];
 
   const handleRowClick = (d: any) => navigate(`/doctors/${d.id}`);

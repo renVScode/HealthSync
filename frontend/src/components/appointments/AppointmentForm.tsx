@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Button } from '../common/Button';
 
+interface PatientOption { id: string; name: string; phone?: string; }
+
 interface AppointmentFormProps {
   onSubmit: (data: any) => void;
-  patients: { id: string; name: string }[];
+  patients: PatientOption[];
   doctors: { id: string; name: string }[];
   selectedDate?: string;
   isLoading?: boolean;
@@ -40,7 +42,7 @@ export function AppointmentForm({ onSubmit, patients, doctors, selectedDate, isL
           className="w-full px-4 py-2 border border-[#E9ECEF] rounded-md"
         >
           <option value="">Select patient</option>
-          {patients.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {patients.map((p) => <option key={p.id} value={p.id}>{p.name}{p.phone ? ` — ${p.phone}` : ''}</option>)}
         </select>
         {errors.patientId && <p className="text-sm text-[#DC3545] mt-1">{errors.patientId}</p>}
       </div>

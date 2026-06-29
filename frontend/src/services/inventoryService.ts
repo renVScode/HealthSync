@@ -9,4 +9,6 @@ export const inventoryService = {
   dispense: (id: string, data: any) => api.post(`/inventory/${id}/dispense`, data),
   getLowStock: () => api.get('/inventory/low-stock'),
   getTransactions: (from?: string, to?: string) => api.get('/inventory/transactions', { params: { from, to } }),
+  archive: (id: string) => api.patch(`/inventory/${id}/archive`),
+  restore: (id: string) => api.patch(`/inventory/${id}/restore`),
 };

@@ -31,6 +31,7 @@ public class AppointmentService : IAppointmentService
         if (filter.Status.HasValue) query = query.Where(a => a.Status == filter.Status);
         if (filter.DateFrom.HasValue) query = query.Where(a => a.StartTime >= filter.DateFrom);
         if (filter.DateTo.HasValue) query = query.Where(a => a.StartTime <= filter.DateTo);
+        if (filter.IsArchived.HasValue) query = query.Where(a => a.IsArchived == filter.IsArchived);
 
         var total = await query.CountAsync();
         var items = await query.OrderBy(a => a.StartTime)
@@ -115,10 +116,15 @@ public class AppointmentService : IAppointmentService
         await _uow.Appointments.AddAsync(appointment);
         await _uow.SaveChangesAsync();
 
-        // Broadcast via SignalR
-        await _notification.NotifyAppointmentCreated(MapToDto(appointment));
+        appointment = await _uow.Appointments.Query()
+            .Include(a => a.Patient)
+            .Include(a => a.Doctor)
+            .FirstOrDefaultAsync(a => a.Id == appointment.Id);
 
-        return MapToDto(appointment);
+        // Broadcast via SignalR
+        await _notification.NotifyAppointmentCreated(MapToDto(appointment!));
+
+        return MapToDto(appointment!);
     }
 
     public async Task<AppointmentResponseDto?> UpdateAsync(Guid id, UpdateAppointmentDto dto)
@@ -172,6 +178,26 @@ public class AppointmentService : IAppointmentService
         await _uow.SaveChangesAsync();
 
         await _notification.NotifyAppointmentCancelled(id);
+        return true;
+    }
+
+    public async Task<bool> ArchiveAsync(Guid id)
+    {
+        var appointment = await _uow.Appointments.GetByIdAsync(id);
+        if (appointment == null) return false;
+        appointment.IsArchived = true;
+        appointment.UpdatedAt = DateTime.UtcNow;
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> RestoreAsync(Guid id)
+    {
+        var appointment = await _uow.Appointments.GetByIdAsync(id);
+        if (appointment == null) return false;
+        appointment.IsArchived = false;
+        appointment.UpdatedAt = DateTime.UtcNow;
+        await _uow.SaveChangesAsync();
         return true;
     }
 
@@ -245,6 +271,7 @@ public class AppointmentService : IAppointmentService
         Reason = a.Reason,
         Notes = a.Notes,
         CancellationReason = a.CancellationReason,
-        CreatedAt = a.CreatedAt
+        CreatedAt = a.CreatedAt,
+        IsArchived = a.IsArchived
     };
 }

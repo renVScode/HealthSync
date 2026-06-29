@@ -13,8 +13,6 @@ export function Landing() {
           <span className="text-lg font-bold text-[#212529]">HealthSync</span>
         </div>
         <div className="flex items-center gap-4">
-          <button className="text-sm text-[#6C757D] hover:text-[#212529] transition-colors">Features</button>
-          <button className="text-sm text-[#6C757D] hover:text-[#212529] transition-colors">Pricing</button>
           <button
             onClick={() => navigate('/login')}
             className="px-5 py-2 bg-[#2C7DA0] text-white text-sm font-medium rounded-lg shadow-sm hover:bg-[#1F5E7A] transition-all duration-200"
@@ -231,12 +229,11 @@ export function Landing() {
                         <td className="px-4 py-3 text-sm text-[#6C757D]">{row.doctor}</td>
                         <td className="px-4 py-3 text-sm text-[#6C757D]">{row.time}</td>
                         <td className="px-4 py-3">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${
-                            row.status === 'Completed' ? 'bg-green-50 text-green-700' :
+                          <span className={`inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full ${row.status === 'Completed' ? 'bg-green-50 text-green-700' :
                             row.status === 'Confirmed' ? 'bg-blue-50 text-blue-700' :
-                            row.status === 'InProgress' ? 'bg-yellow-50 text-yellow-700' :
-                            'bg-gray-100 text-gray-500'
-                          }`}>
+                              row.status === 'InProgress' ? 'bg-yellow-50 text-yellow-700' :
+                                'bg-gray-100 text-gray-500'
+                            }`}>
                             {row.status === 'InProgress' ? 'In Progress' : row.status}
                           </span>
                         </td>

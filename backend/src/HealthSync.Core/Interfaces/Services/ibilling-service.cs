@@ -7,6 +7,7 @@ public interface IBillingService
 {
     Task<PaginatedResult<BillingResponseDto>> GetAllAsync(BillingFilterDto filter);
     Task<BillingResponseDto?> GetByIdAsync(Guid id);
+    Task<BillingResponseDto?> GetByAppointmentIdAsync(Guid appointmentId);
     Task<BillingResponseDto> CreateAsync(CreateBillingDto dto);
     Task<bool> AddPaymentAsync(Guid billingId, CreatePaymentDto dto);
     Task<List<PaymentResponseDto>> GetPaymentsAsync(Guid billingId);

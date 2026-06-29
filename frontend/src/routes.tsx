@@ -17,6 +17,7 @@ import { Inventory } from './pages/Inventory';
 import { Reports } from './pages/Reports';
 import { Pharmacy } from './pages/Pharmacy';
 import { Users } from './pages/Users';
+import { Archives } from './pages/Archives';
 import { AuditLogs } from './pages/AuditLogs';
 import { NotFound } from './pages/NotFound';
 
@@ -43,6 +44,7 @@ export function AppRoutes() {
         <Route path="pharmacy" element={<ProtectedRoute roles={['Admin', 'Pharmacist']}><Pharmacy /></ProtectedRoute>} />
         <Route path="audit-logs" element={<ProtectedRoute roles={['Admin']}><AuditLogs /></ProtectedRoute>} />
         <Route path="users" element={<ProtectedRoute roles={['Admin']}><Users /></ProtectedRoute>} />
+        <Route path="archives" element={<ProtectedRoute roles={['Admin', 'Receptionist', 'Doctor', 'Pharmacist']}><Archives /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

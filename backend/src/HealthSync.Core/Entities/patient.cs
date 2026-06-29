@@ -16,6 +16,7 @@ public class Patient
     public string? EmergencyPhone { get; set; }
     public string? MedicalHistory { get; set; }
     public string? Allergies { get; set; }
+    public bool IsArchived { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

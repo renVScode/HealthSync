@@ -11,6 +11,7 @@ public class InventoryBatch
     public DateOnly? ExpiryDate { get; set; }
     public string? Supplier { get; set; }
     public string? Location { get; set; }
+    public bool IsArchived { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

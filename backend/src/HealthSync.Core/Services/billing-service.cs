@@ -65,6 +65,17 @@ public class BillingService : IBillingService
         return billing == null ? null : MapToDto(billing);
     }
 
+    public async Task<BillingResponseDto?> GetByAppointmentIdAsync(Guid appointmentId)
+    {
+        var billing = await _uow.Billings.Query()
+            .Include(b => b.Patient)
+            .Include(b => b.Items)
+            .Include(b => b.Payments)
+            .FirstOrDefaultAsync(b => b.AppointmentId == appointmentId);
+
+        return billing == null ? null : MapToDto(billing);
+    }
+
     public async Task<BillingResponseDto> CreateAsync(CreateBillingDto dto)
     {
         var subTotal = dto.Items.Sum(i => i.Quantity * i.UnitPrice);

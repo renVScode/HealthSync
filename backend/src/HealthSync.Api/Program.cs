@@ -1,4 +1,5 @@
 using System.Text;
+using HealthSync.Api.Converters;
 using HealthSync.Api.Hubs;
 using HealthSync.Api.Middleware;
 using HealthSync.Core.Entities.Identity;
@@ -74,7 +75,11 @@ builder.Services.AddApplicationServices();
 builder.Services.AddScoped<IAppointmentNotificationService, SignalRNotificationService>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

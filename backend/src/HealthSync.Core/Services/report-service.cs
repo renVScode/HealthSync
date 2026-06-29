@@ -15,9 +15,11 @@ public class ReportService : IReportService
         _uow = uow;
     }
 
-    public async Task<AppointmentSummaryDto> GetAppointmentSummaryAsync(DateTime from, DateTime to)
+    public async Task<AppointmentSummaryDto> GetAppointmentSummaryAsync(DateTime from, DateTime to, Guid? doctorId = null)
     {
-        var appointments = await _uow.Appointments.FindAsync(a => a.StartTime >= from && a.StartTime <= to);
+        var appointments = await _uow.Appointments.FindAsync(a =>
+            a.StartTime >= from && a.StartTime <= to &&
+            (doctorId == null || a.DoctorId == doctorId));
         return new AppointmentSummaryDto
         {
             Total = appointments.Count(),
@@ -30,9 +32,12 @@ public class ReportService : IReportService
         };
     }
 
-    public async Task<RevenueReportDto> GetRevenueAsync(DateTime from, DateTime to)
+    public async Task<RevenueReportDto> GetRevenueAsync(DateTime from, DateTime to, Guid? doctorId = null)
     {
-        var billings = await _uow.Billings.FindAsync(b => b.CreatedAt >= from && b.CreatedAt <= to);
+        var billingsQuery = _uow.Billings.Query();
+        var billings = doctorId == null
+            ? await billingsQuery.Where(b => b.CreatedAt >= from && b.CreatedAt <= to).ToListAsync()
+            : await billingsQuery.Where(b => b.CreatedAt >= from && b.CreatedAt <= to && b.Appointment != null && b.Appointment.DoctorId == doctorId).ToListAsync();
         var paid = billings.Where(b => b.Status == BillingStatus.Paid || b.Status == BillingStatus.PartiallyPaid);
         var daily = paid.GroupBy(b => b.CreatedAt.Date)
             .Select(g => new DailyRevenueDto { Date = g.Key, Revenue = g.Sum(b => b.AmountPaid), AppointmentCount = g.Count() })
@@ -84,11 +89,12 @@ public class ReportService : IReportService
         };
     }
 
-    public async Task<List<PatientVisitDto>> GetPatientVisitsAsync(DateTime from, DateTime to)
+    public async Task<List<PatientVisitDto>> GetPatientVisitsAsync(DateTime from, DateTime to, Guid? doctorId = null)
     {
         var appointments = await _uow.Appointments.Query()
             .Include(a => a.Patient)
-            .Where(a => a.StartTime >= from && a.StartTime <= to && a.Status == AppointmentStatus.Completed)
+            .Where(a => a.StartTime >= from && a.StartTime <= to && a.Status == AppointmentStatus.Completed &&
+                (doctorId == null || a.DoctorId == doctorId))
             .ToListAsync();
 
         return appointments.GroupBy(a => new { a.PatientId, a.Patient.FirstName, a.Patient.LastName })
