@@ -18,12 +18,14 @@ A full-stack clinic management platform built with Clean Architecture. Handles p
 ## Features
 
 - **Role-based access** — Admin, Doctor, Receptionist, Pharmacist with granular permissions
-- **Appointment scheduling** — 15-minute slots, availability rules, time-off blocking, status lifecycle (Scheduled → Confirmed → InProgress → Completed / Cancelled / NoShow)
-- **Patient management** — Full CRUD with search, medical history, allergies, emergency contacts
+- **Appointment scheduling** — 15-minute slots, availability rules, time-off blocking, status lifecycle. Month-only calendar with styled event cards; click an event for a detail modal showing patient, time, reason, and status.
+- **Patient management** — Full CRUD with search, medical history timeline (collapsible), allergies, emergency contacts
 - **Electronic Medical Records** — Diagnoses, prescriptions, treatment plans, confidentiality flags
 - **Pharmacy inventory** — Batch tracking with expiry dates, stock movements (stock-in, dispensing, adjustments), reorder alerts
 - **Billing & payments** — Invoicing with line items, multi-payment support (Cash/Card/Online/Insurance), partial payments
 - **Reporting** — Aggregated analytics across appointments, revenue, inventory
+- **Archive & restore** — Soft-delete users, patients, and medical records; view and restore them from a dedicated Archives page. Archived users are automatically set inactive.
+- **Custom confirmation dialogs** — A reusable `ConfirmDialog` modal component replaces native `window.confirm()` across all destructive actions.
 - **Real-time updates** — Live appointment changes and push notifications via SignalR
 - **Audit logging** — All create/update/delete operations tracked with JSON snapshots
 - **Docker support** — One-command deployment, no local tool conflicts
@@ -129,6 +131,9 @@ bun run dev
 | `GET/POST /api/medicines` | Medicine catalog |
 | `GET/POST /api/inventory` | Stock batches + transactions |
 | `GET /api/reports` | Aggregated analytics |
+| `PATCH /api/patients/{id}/archive\|restore` | Archive or restore a patient |
+| `PATCH /api/users/{id}/archive\|restore` | Archive or restore a user |
+| `PATCH /api/medical-records/{id}/archive\|restore` | Archive or restore a medical record |
 
 Full API documentation available at `/swagger` when the backend is running.
 
@@ -146,7 +151,7 @@ backend/
 frontend/
 ├── src/
 │   ├── components/                   # Common, Layout, Auth, Appointment, Domain
-│   ├── pages/                        # Dashboard, Login, Patients, Appointments, etc.
+│   ├── pages/                        # Dashboard, Login, Patients, Appointments, Archives, etc.
 │   ├── services/                     # Axios API client + service modules
 │   ├── hooks/                        # useAuth, useSignalR, usePagination, useDebounce
 │   ├── contexts/                     # AuthContext (React Context)
@@ -166,6 +171,7 @@ frontend/
 - **JWT with refresh token rotation**: Short-lived access tokens (15 min) + long-lived refresh tokens (7 days) stored in the user table. Each refresh invalidates the previous token (rotation). Password hashing uses `PasswordHasher<T>` directly (no Identity framework).
 - **Nullable UserId on Patient**: Walk-in patients can be registered without requiring a portal login account.
 - **Port 5433 for Docker PostgreSQL**: Avoids conflict with local PostgreSQL on 5432 — both can run simultaneously.
+- **Soft-delete via IsArchived flag**: Archived records hide from main views (filtered where `IsArchived = false`) and reappear only in the Archives page. Archived users also get `IsActive = false`.
 
 ## License
 
