@@ -10,26 +10,208 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ─── FullCalendar Modern Theme ─── */
+
+/* --- Toolbar --- */
+.fc .fc-toolbar {
+  gap: 12px;
+  padding: 16px 20px 8px;
+  flex-wrap: wrap;
+}
+
 .fc .fc-toolbar-title {
-  font-size: 1.2rem !important;
+  font-size: 1.25rem !important;
+  font-weight: 700;
   color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.fc .fc-button {
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .fc .fc-button-primary {
   background-color: var(--color-primary) !important;
   border-color: var(--color-primary) !important;
+  box-shadow: 0 1px 3px rgba(44,125,160,0.2);
+}
+
+.fc .fc-button-primary:hover {
+  background-color: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+  box-shadow: 0 2px 6px rgba(44,125,160,0.3);
+  transform: translateY(-1px);
 }
 
 .fc .fc-button-primary:not(:disabled).fc-button-active {
-  background-color: var(--color-primary-hover) !important;
+  background-color: var(--color-primary-dark) !important;
+  border-color: var(--color-primary-dark) !important;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
 }
 
-.fc .fc-timegrid-slot {
-  height: 30px !important;
+.fc .fc-button-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.fc .fc-timegrid-slot-minor {
-  border-top-style: dotted !important;
+.fc .fc-button-group .fc-button {
+  margin: 0;
+}
+
+.fc .fc-button-group > .fc-button:not(:first-child) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.fc .fc-button-group > .fc-button:not(:last-child) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* --- View Background --- */
+.fc .fc-view-harness {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+}
+
+/* --- Day Headers --- */
+.fc .fc-col-header-cell {
+  padding: 10px 0;
+  background: var(--color-bg);
+  border: none;
+}
+
+.fc .fc-col-header-cell-cushion {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-decoration: none !important;
+}
+
+.fc .fc-col-header-cell.fc-day-today {
+  background: rgba(44,125,160,0.06);
+}
+
+/* --- Day Grid (Month) --- */
+.fc .fc-daygrid-day {
+  border: 1px solid #F1F3F5;
+  transition: background 0.15s ease;
+}
+
+.fc .fc-daygrid-day:hover {
+  background: rgba(44,125,160,0.03);
+}
+
+.fc .fc-daygrid-day-top {
+  padding: 4px 6px 0;
+}
+
+.fc .fc-daygrid-day-number {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  text-decoration: none !important;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  background: rgba(44,125,160,0.06);
+}
+
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  background: var(--color-primary);
+  color: white;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.8125rem;
+}
+
+.fc .fc-daygrid-day.fc-day-other {
+  opacity: 0.35;
+}
+
+.fc .fc-daygrid-more-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+/* --- Events --- */
+.fc .fc-event {
+  border-radius: 8px;
+  padding: 2px 0;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+}
+
+.fc .fc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+}
+
+.fc .fc-event .fc-event-main {
+  padding: 0;
+}
+
+.fc .fc-daygrid-event {
+  border-radius: 6px;
+  padding: 0 4px;
+  margin: 1px 4px;
+  font-size: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+/* --- Custom Event Content --- */
+.custom-event {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+
+
+/* --- Selection / Highlight --- */
+.fc .fc-highlight {
+  background: rgba(44,125,160,0.08);
+}
+
+.fc .fc-more-popover {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border);
+}
+
+.fc .fc-more-popover .fc-popover-header {
+  background: var(--color-bg);
+  padding: 10px 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+/* --- Scrollbar polish (keeps existing scrollbar) --- */
+.fc .fc-scroller {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-disabled) transparent;
 }
 
 ::-webkit-scrollbar {

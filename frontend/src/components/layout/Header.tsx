@@ -7,9 +7,11 @@ const pathTitles: Record<string, string> = {
   '/doctors': 'Doctors',
   '/medical-records': 'Medical Records',
   '/inventory': 'Inventory',
-  '/billing': 'Billing',
+  '/billings': 'Billings',
+  '/pharmacy': 'Pharmacy',
   '/reports': 'Reports',
   '/users': 'Users',
+  '/archives': 'Archives',
   '/audit-logs': 'Audit Logs',
 };
 

@@ -58,6 +58,9 @@ public class CalendarEventDto
 {
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;
+    public string PatientName { get; set; } = string.Empty;
+    public string DoctorName { get; set; } = string.Empty;
+    public string? Reason { get; set; }
     public DateTime Start { get; set; }
     public DateTime End { get; set; }
     public string? Color { get; set; }

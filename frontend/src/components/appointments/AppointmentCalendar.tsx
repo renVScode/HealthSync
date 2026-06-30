@@ -1,19 +1,16 @@
 import { useRef } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
 import { CalendarEvent } from '../../types';
 import { STATUS_COLORS } from '../../utils/constants';
 
 interface AppointmentCalendarProps {
   events: CalendarEvent[];
   onEventClick?: (event: CalendarEvent) => void;
-  onDateSelect?: (start: Date, end: Date) => void;
   onDateRangeChange?: (start: string, end: string) => void;
 }
 
-export function AppointmentCalendar({ events, onEventClick, onDateSelect, onDateRangeChange }: AppointmentCalendarProps) {
+export function AppointmentCalendar({ events, onEventClick, onDateRangeChange }: AppointmentCalendarProps) {
   const calendarRef = useRef<FullCalendar>(null);
 
   const calendarEvents = events.map((e) => ({
@@ -28,31 +25,24 @@ export function AppointmentCalendar({ events, onEventClick, onDateSelect, onDate
   }));
 
   return (
-    <div className="bg-white rounded-lg border border-[#E9ECEF] p-4">
+    <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-sm">
       <FullCalendar
         ref={calendarRef}
-        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        initialView="timeGridDay"
+        plugins={[dayGridPlugin]}
+        initialView="dayGridMonth"
         headerToolbar={{
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek,timeGridDay',
+          left: 'title',
+          center: '',
+          right: 'prev,next today',
         }}
-        slotMinTime="07:00:00"
-        slotMaxTime="19:00:00"
-        slotDuration="00:15:00"
-        allDaySlot={false}
+        buttonText={{ today: 'Today' }}
         height="auto"
         events={calendarEvents}
         eventClick={(info) => onEventClick?.(info.event.extendedProps as CalendarEvent)}
-        selectable={true}
-        select={(info) => onDateSelect?.(info.start, info.end)}
         datesSet={(info) => onDateRangeChange?.(info.start.toISOString(), info.end.toISOString())}
-        selectConstraint={{
-          start: '07:00',
-          end: '19:00',
-          dow: [1, 2, 3, 4, 5, 6],
-        }}
+        eventContent={(arg) => ({
+          html: `<div class="custom-event">${arg.event.title}</div>`
+        })}
       />
     </div>
   );

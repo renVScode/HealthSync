@@ -113,6 +113,9 @@ export interface Appointment {
 export interface CalendarEvent {
   id: string;
   title: string;
+  patientName: string;
+  doctorName: string;
+  reason?: string;
   start: string;
   end: string;
   color?: string;

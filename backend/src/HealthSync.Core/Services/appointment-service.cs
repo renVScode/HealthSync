@@ -216,6 +216,9 @@ public class AppointmentService : IAppointmentService
         {
             Id = a.Id,
             Title = $"{a.Patient.FirstName} {a.Patient.LastName}" + (a.Reason != null ? $" - {a.Reason}" : ""),
+            PatientName = $"{a.Patient.FirstName} {a.Patient.LastName}",
+            DoctorName = $"Dr. {a.Doctor.FirstName} {a.Doctor.LastName}",
+            Reason = a.Reason,
             Start = a.StartTime,
             End = a.EndTime,
             Status = a.Status,

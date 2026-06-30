@@ -160,27 +160,6 @@ export function MedicalRecords() {
         </div>
       </Card>
 
-      {selectedPatient && (
-        <Card title={`Medical Records - ${selectedPatient.firstName} ${selectedPatient.lastName}`}
-          actions={canCreate && <Button size="sm" onClick={() => openCreateModal(selectedPatient)}>+ New Record</Button>}
-        >
-          {records.length === 0 ? (
-            <p className="text-sm text-[#6C757D] py-4 text-center">No medical records for this patient</p>
-          ) : (
-            <DataTable
-              columns={[
-                { key: 'diagnosis', header: 'Diagnosis' },
-                { key: 'doctorName', header: 'Doctor' },
-                { key: 'createdAt', header: 'Date', render: (r: any) => formatDate(r.createdAt) },
-                { key: 'isConfidential', header: 'Confidential', render: (r: any) => r.isConfidential ? 'Yes' : 'No' },
-              ]}
-              data={records}
-              onRowClick={(r) => setSelectedRecord(r)}
-            />
-          )}
-        </Card>
-      )}
-
       <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="New Medical Record" size="lg"
         footer={
           <div className="flex gap-2 justify-end">
@@ -413,28 +392,28 @@ export function MedicalRecords() {
                 <p className="text-sm bg-[#F8F9FA] p-3 rounded">{selectedRecord.notes}</p>
               </div>
             )}
-                {selectedRecord.prescriptions?.length > 0 && (
-                  <div>
-                    <span className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">Prescriptions</span>
-                    {selectedRecord.prescriptions.map((px: any) => (
-                      <div key={px.id} className="flex items-center justify-between p-2 bg-[#F8F9FA] rounded mb-1 text-sm">
-                        <span className="font-medium">{px.medicineName}</span>
-                        <span className="text-[#6C757D]">{px.dosage} - {px.frequency}{px.duration ? ` for ${px.duration}` : ''} ({px.quantity} {px.quantity > 1 ? 'units' : 'unit'})</span>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded ${px.status === 'Completed' ? 'bg-[#D4EDDA] text-[#155724]' :
-                            px.status === 'Paid' ? 'bg-[#FFF3CD] text-[#856404]' :
-                              'bg-[#E2E3E5] text-[#383D41]'
-                            }`}>{px.status}</span>
-                          {px.status === 'Pending' && hasRole('Receptionist') && (
-                            <button onClick={handleMarkPaid} className="text-xs px-2 py-0.5 rounded bg-[#2C7DA0] text-white hover:bg-[#1A5A7A]">
-                              Mark as Paid
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+            {selectedRecord.prescriptions?.length > 0 && (
+              <div>
+                <span className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">Prescriptions</span>
+                {selectedRecord.prescriptions.map((px: any) => (
+                  <div key={px.id} className="flex items-center justify-between p-2 bg-[#F8F9FA] rounded mb-1 text-sm">
+                    <span className="font-medium">{px.medicineName}</span>
+                    <span className="text-[#6C757D]">{px.dosage} - {px.frequency}{px.duration ? ` for ${px.duration}` : ''} ({px.quantity} {px.quantity > 1 ? 'units' : 'unit'})</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded ${px.status === 'Completed' ? 'bg-[#D4EDDA] text-[#155724]' :
+                        px.status === 'Paid' ? 'bg-[#FFF3CD] text-[#856404]' :
+                          'bg-[#E2E3E5] text-[#383D41]'
+                        }`}>{px.status}</span>
+                      {px.status === 'Pending' && hasRole('Receptionist') && (
+                        <button onClick={handleMarkPaid} className="text-xs px-2 py-0.5 rounded bg-[#2C7DA0] text-white hover:bg-[#1A5A7A]">
+                          Mark as Paid
+                        </button>
+                      )}
+                    </div>
                   </div>
-                )}
+                ))}
+              </div>
+            )}
           </div>
         )}
       </Modal>
