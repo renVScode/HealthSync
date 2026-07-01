@@ -110,15 +110,27 @@ export function Landing() {
       </section>
 
       {/* ── SECTION 2: TRUST BAR ─────────────────────────── */}
-      <section className="bg-white border-y border-[#E9ECEF] py-10">
-        <div className="max-w-5xl mx-auto px-8 text-center">
-          <p className="text-xs text-[#ADB5BD] uppercase tracking-[0.15em] font-semibold mb-6">
+      <section className="bg-white border-y border-[#E9ECEF] py-12">
+        <div className="max-w-6xl mx-auto px-8 text-center">
+          <p className="text-xs text-[#ADB5BD] uppercase tracking-[0.15em] font-semibold mb-8">
             Trusted by over 1,200+ clinical professionals nationwide
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-40">
-            {[' ManilaMed', 'StLuke\'s', 'MakatiMed', 'AsianHosp', 'TheMedCity', 'Perpetual'].map((name) => (
-              <div key={name} className="h-8 flex items-center">
-                <div className="w-28 h-6 bg-[#CED4DA] rounded" />
+          <div className="flex flex-wrap items-center justify-center gap-6">
+            {[
+              { name: 'ManilaMed', tag: 'Cardiology Center', color: '#2C7DA0' },
+              { name: 'St. Luke\'s', tag: 'General Hospital', color: '#28A745' },
+              { name: 'MakatiMed', tag: 'Medical Center', color: '#DC3545' },
+              { name: 'Asian Hospital', tag: 'Multi-Specialty', color: '#8B5CF6' },
+              { name: 'The Medical City', tag: 'Healthcare Corp.', color: '#E67E22' },
+              { name: 'Perpetual Help', tag: 'Hospital & Clinics', color: '#17A2B8' },
+            ].map((org) => (
+              <div key={org.name}
+                className="flex items-center gap-3 px-4 py-3 bg-[#F8F9FA] rounded-xl border border-[#E9ECEF] hover:border-[#80CED7] hover:shadow-sm transition-all duration-200 min-w-[200px]">
+                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: org.color }} />
+                <div className="text-left">
+                  <div className="text-sm font-semibold text-[#212529] leading-tight">{org.name}</div>
+                  <div className="text-[10px] text-[#ADB5BD] uppercase tracking-wider">{org.tag}</div>
+                </div>
               </div>
             ))}
           </div>

@@ -4,15 +4,18 @@ import { DataTable } from '../components/common/DataTable';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { authService } from '../services/authService';
 import { patientService } from '../services/patientService';
+import { useAuth } from '../contexts/auth-context';
 import { PAGE_SIZE } from '../utils/constants';
 
 type Tab = 'users' | 'patients';
 
 export function Archives() {
-  const [activeTab, setActiveTab] = useState<Tab>('users');
+  const { hasRole } = useAuth();
+  const canViewUsers = hasRole('Admin');
+  const [activeTab, setActiveTab] = useState<Tab>(canViewUsers ? 'users' : 'patients');
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'users', label: 'Users' },
+    ...(canViewUsers ? [{ key: 'users' as const, label: 'Users' }] : []),
     { key: 'patients', label: 'Patients' },
   ];
 

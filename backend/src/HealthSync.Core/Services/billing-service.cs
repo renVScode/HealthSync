@@ -111,6 +111,7 @@ public class BillingService : IBillingService
         var appointment = await _uow.Appointments.Query()
             .Include(a => a.Patient)
             .Include(a => a.Doctor)
+            .Include(a => a.ServiceOffering)
             .Include(a => a.MedicalRecord).ThenInclude(r => r.Prescriptions).ThenInclude(p => p.Medicine)
             .FirstOrDefaultAsync(a => a.Id == appointmentId);
 
@@ -118,17 +119,27 @@ public class BillingService : IBillingService
             return null;
 
         var medicalRecord = appointment.MedicalRecord;
-        var consultationFee = appointment.Doctor.ConsultationFee;
 
-        var items = new List<CreateBillingItemDto>
+        var items = new List<CreateBillingItemDto>();
+
+        if (appointment.ServiceOffering != null)
         {
-            new()
+            items.Add(new()
+            {
+                Description = $"{appointment.ServiceOffering.ServiceName} - Dr. {appointment.Doctor.FirstName} {appointment.Doctor.LastName}",
+                Quantity = 1,
+                UnitPrice = appointment.ServiceOffering.Price
+            });
+        }
+        else
+        {
+            items.Add(new()
             {
                 Description = $"Consultation - Dr. {appointment.Doctor.FirstName} {appointment.Doctor.LastName}",
                 Quantity = 1,
-                UnitPrice = consultationFee
-            }
-        };
+                UnitPrice = appointment.Doctor.ConsultationFee
+            });
+        }
 
         foreach (var prescription in medicalRecord.Prescriptions)
         {
@@ -178,6 +189,7 @@ public class BillingService : IBillingService
             PaymentMethod = dto.PaymentMethod,
             TransactionReference = dto.TransactionReference,
             QrCodeImageUrl = dto.QrCodeImageUrl,
+            PaymentDetails = dto.PaymentDetails,
             IsVerified = !hasQr,
             Notes = dto.Notes
         };
@@ -253,6 +265,7 @@ public class BillingService : IBillingService
             PaymentMethod = p.PaymentMethod,
             TransactionReference = p.TransactionReference,
             QrCodeImageUrl = p.QrCodeImageUrl,
+            PaymentDetails = p.PaymentDetails,
             IsVerified = p.IsVerified,
             ReceivedAt = p.ReceivedAt
         }).ToList();
@@ -294,6 +307,7 @@ public class BillingService : IBillingService
             PaymentMethod = p.PaymentMethod,
             TransactionReference = p.TransactionReference,
             QrCodeImageUrl = p.QrCodeImageUrl,
+            PaymentDetails = p.PaymentDetails,
             IsVerified = p.IsVerified,
             ReceivedAt = p.ReceivedAt
         }).ToList()

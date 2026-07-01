@@ -16,4 +16,10 @@ public interface IDoctorService
     Task<List<TimeOffResponseDto>> GetTimeOffsAsync(Guid doctorId);
     Task<TimeOffResponseDto> RequestTimeOffAsync(Guid doctorId, CreateTimeOffDto dto);
     Task<List<AvailableSlotDto>> GetAvailableSlotsAsync(Guid doctorId, DateTime date);
+
+    // Service Offerings
+    Task<List<ServiceOfferingResponseDto>> GetServiceOfferingsAsync(Guid doctorId);
+    Task<ServiceOfferingResponseDto> AddServiceOfferingAsync(Guid doctorId, CreateServiceOfferingDto dto);
+    Task<ServiceOfferingResponseDto?> UpdateServiceOfferingAsync(Guid doctorId, Guid serviceId, UpdateServiceOfferingDto dto);
+    Task<bool> DeleteServiceOfferingAsync(Guid doctorId, Guid serviceId);
 }

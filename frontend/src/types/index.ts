@@ -136,6 +136,7 @@ export interface MedicalRecord {
   treatment?: string;
   notes?: string;
   isConfidential: boolean;
+  isCompleted: boolean;
   createdAt: string;
   updatedAt: string;
   prescriptions: Prescription[];
@@ -195,6 +196,7 @@ export interface Payment {
   paymentMethod: PaymentMethod;
   transactionReference?: string;
   qrCodeImageUrl?: string;
+  paymentDetails?: string;
   isVerified: boolean;
   receivedBy?: string;
   receivedAt: string;
@@ -237,6 +239,53 @@ export interface AvailableSlot {
   startTime: string;
   endTime: string;
   isAvailable: boolean;
+}
+
+export enum LabOrderStatus {
+  Ordered = 0,
+  Collected = 1,
+  Processing = 2,
+  Completed = 3,
+  Cancelled = 4,
+}
+
+export interface LabTest {
+  id: string;
+  testName: string;
+  category?: string;
+  description?: string;
+  price: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface LabOrder {
+  id: string;
+  patientId: string;
+  patientName: string;
+  doctorId: string;
+  doctorName: string;
+  labTestId: string;
+  testName: string;
+  category?: string;
+  price: number;
+  status: LabOrderStatus;
+  result?: string;
+  resultSummary?: string;
+  notes?: string;
+  referenceRange?: string;
+  completedAt?: string;
+  orderedAt: string;
+}
+
+export interface DoctorServiceOffering {
+  id: string;
+  doctorId: string;
+  serviceName: string;
+  description?: string;
+  price: number;
+  isActive: boolean;
+  createdAt: string;
 }
 
 export interface AuditLog {

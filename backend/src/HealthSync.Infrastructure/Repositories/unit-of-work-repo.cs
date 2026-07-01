@@ -32,6 +32,9 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<Billing>? _billings;
     private IRepository<BillingItem>? _billingItems;
     private IRepository<Payment>? _payments;
+    private IRepository<DoctorServiceOffering>? _doctorServiceOfferings;
+    private IRepository<LabTest>? _labTests;
+    private IRepository<LabOrder>? _labOrders;
     private IRepository<AuditLog>? _auditLogs;
 
     public IRepository<Patient> Patients => _patients ??= new GenericRepository<Patient>(_context);
@@ -47,6 +50,9 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<Billing> Billings => _billings ??= new GenericRepository<Billing>(_context);
     public IRepository<BillingItem> BillingItems => _billingItems ??= new GenericRepository<BillingItem>(_context);
     public IRepository<Payment> Payments => _payments ??= new GenericRepository<Payment>(_context);
+    public IRepository<DoctorServiceOffering> DoctorServiceOfferings => _doctorServiceOfferings ??= new GenericRepository<DoctorServiceOffering>(_context);
+    public IRepository<LabTest> LabTests => _labTests ??= new GenericRepository<LabTest>(_context);
+    public IRepository<LabOrder> LabOrders => _labOrders ??= new GenericRepository<LabOrder>(_context);
     public IRepository<AuditLog> AuditLogs => _auditLogs ??= new GenericRepository<AuditLog>(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

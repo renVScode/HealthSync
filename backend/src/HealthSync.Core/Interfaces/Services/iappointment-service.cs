@@ -15,4 +15,5 @@ public interface IAppointmentService
     Task<List<CalendarEventDto>> GetCalendarEventsAsync(DateTime start, DateTime end, Guid? doctorId);
     Task<bool> ArchiveAsync(Guid id);
     Task<bool> RestoreAsync(Guid id);
+    Task<int> MarkNoShowAppointmentsAsync();
 }

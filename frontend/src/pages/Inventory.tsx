@@ -25,6 +25,8 @@ export function Inventory() {
   const [medicines, setMedicines] = useState<any[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [restockMedicineId, setRestockMedicineId] = useState('');
+  const [restockMedicineName, setRestockMedicineName] = useState('');
   const [form, setForm] = useState({
     medicineId: '',
     batchNumber: '',
@@ -59,6 +61,20 @@ export function Inventory() {
     });
   }, []);
 
+  const handleRestock = (item: any) => {
+    setRestockMedicineId(item.medicineId);
+    setRestockMedicineName(item.medicineName);
+    setForm({ medicineId: item.medicineId, batchNumber: '', quantity: 1, unitPrice: 0, expiryDate: '', supplier: '' });
+    setShowAddModal(true);
+  };
+
+  const closeModal = () => {
+    setShowAddModal(false);
+    setSubmitError(null);
+    setRestockMedicineId('');
+    setRestockMedicineName('');
+  };
+
   const handleAddStock = async () => {
     if (!form.medicineId || !form.batchNumber.trim() || form.quantity < 1 || form.unitPrice <= 0) return;
     setSubmitting(true);
@@ -72,7 +88,7 @@ export function Inventory() {
         expiryDate: form.expiryDate || undefined,
         supplier: form.supplier.trim() || undefined,
       });
-      setShowAddModal(false);
+      closeModal();
       setForm({ medicineId: '', batchNumber: '', quantity: 1, unitPrice: 0, expiryDate: '', supplier: '' });
       const [batchRes, lowStockRes] = await Promise.all([
         inventoryService.getAll(page, PAGE_SIZE, debouncedSearch || undefined),
@@ -109,10 +125,11 @@ export function Inventory() {
         <Card title="Low Stock Alerts" className="border-yellow-200">
           <div className="space-y-2">
             {lowStock.map((item: any) => (
-              <div key={item.medicineId} className="flex justify-between items-center p-2 bg-yellow-50 rounded">
+              <button key={item.medicineId} onClick={() => handleRestock(item)}
+                className="w-full flex justify-between items-center p-2 bg-yellow-50 rounded hover:bg-yellow-100 text-left">
                 <span className="font-medium">{item.medicineName}</span>
                 <span className="text-sm">Stock: {item.currentStock} / Reorder at: {item.reorderLevel}</span>
-              </div>
+              </button>
             ))}
           </div>
         </Card>
@@ -132,10 +149,10 @@ export function Inventory() {
         />
       </Card>
 
-      <Modal isOpen={showAddModal} onClose={() => { setShowAddModal(false); setSubmitError(null); }} title="Add Stock" size="md"
+      <Modal isOpen={showAddModal} onClose={closeModal} title={restockMedicineId ? `Restock: ${restockMedicineName}` : 'Add Stock'} size="md"
         footer={
           <div className="flex gap-2 justify-end">
-            <Button variant="secondary" size="sm" onClick={() => { setShowAddModal(false); setSubmitError(null); }}>Cancel</Button>
+            <Button variant="secondary" size="sm" onClick={closeModal}>Cancel</Button>
             <Button size="sm" onClick={handleAddStock} disabled={submitting || !form.medicineId || !form.batchNumber.trim() || form.quantity < 1 || form.unitPrice <= 0}>
               {submitting ? 'Adding...' : 'Add Stock'}
             </Button>

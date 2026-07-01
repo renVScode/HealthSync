@@ -21,4 +21,10 @@ export const doctorService = {
   getTimeOffs: (id: string) => api.get(`/doctors/${id}/time-offs`),
   requestTimeOff: (id: string, data: any) => api.post(`/doctors/${id}/time-offs`, data),
   getSlots: (id: string, date: string) => api.get<AvailableSlot[]>(`/doctors/${id}/slots`, { params: { date } }),
+
+  // Service Offerings
+  getServiceOfferings: (id: string) => api.get(`/doctors/${id}/services`),
+  addServiceOffering: (id: string, data: any) => api.post(`/doctors/${id}/services`, data),
+  updateServiceOffering: (id: string, serviceId: string, data: any) => api.put(`/doctors/${id}/services/${serviceId}`, data),
+  deleteServiceOffering: (id: string, serviceId: string) => api.delete(`/doctors/${id}/services/${serviceId}`),
 };

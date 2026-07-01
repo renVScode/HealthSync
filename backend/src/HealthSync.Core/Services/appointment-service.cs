@@ -24,6 +24,7 @@ public class AppointmentService : IAppointmentService
         var query = _uow.Appointments.Query()
             .Include(a => a.Patient)
             .Include(a => a.Doctor)
+            .Include(a => a.ServiceOffering)
             .AsQueryable();
 
         if (filter.PatientId.HasValue) query = query.Where(a => a.PatientId == filter.PatientId);
@@ -53,6 +54,7 @@ public class AppointmentService : IAppointmentService
         var appointment = await _uow.Appointments.Query()
             .Include(a => a.Patient)
             .Include(a => a.Doctor)
+            .Include(a => a.ServiceOffering)
             .FirstOrDefaultAsync(a => a.Id == id);
 
         return appointment == null ? null : MapToDto(appointment);
@@ -106,6 +108,7 @@ public class AppointmentService : IAppointmentService
             EndTime = endTime,
             Reason = dto.Reason,
             Notes = dto.Notes,
+            ServiceOfferingId = dto.ServiceOfferingId,
             Status = AppointmentStatus.Scheduled
         };
 
@@ -119,6 +122,7 @@ public class AppointmentService : IAppointmentService
         appointment = await _uow.Appointments.Query()
             .Include(a => a.Patient)
             .Include(a => a.Doctor)
+            .Include(a => a.ServiceOffering)
             .FirstOrDefaultAsync(a => a.Id == appointment.Id);
 
         // Broadcast via SignalR
@@ -144,6 +148,7 @@ public class AppointmentService : IAppointmentService
         }
         if (dto.Reason != null) appointment.Reason = dto.Reason;
         if (dto.Notes != null) appointment.Notes = dto.Notes;
+        if (dto.ServiceOfferingId.HasValue) appointment.ServiceOfferingId = dto.ServiceOfferingId.Value;
 
         appointment.UpdatedAt = DateTime.UtcNow;
         await _uow.SaveChangesAsync();
@@ -199,6 +204,25 @@ public class AppointmentService : IAppointmentService
         appointment.UpdatedAt = DateTime.UtcNow;
         await _uow.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<int> MarkNoShowAppointmentsAsync()
+    {
+        var now = DateTime.UtcNow;
+        var expired = await _uow.Appointments.Query()
+            .Where(a => a.EndTime < now
+                && (a.Status == AppointmentStatus.Scheduled
+                    || a.Status == AppointmentStatus.Confirmed))
+            .ToListAsync();
+
+        foreach (var a in expired)
+        {
+            a.Status = AppointmentStatus.NoShow;
+            a.UpdatedAt = now;
+        }
+
+        await _uow.SaveChangesAsync();
+        return expired.Count;
     }
 
     public async Task<List<CalendarEventDto>> GetCalendarEventsAsync(DateTime start, DateTime end, Guid? doctorId)
@@ -274,6 +298,9 @@ public class AppointmentService : IAppointmentService
         Reason = a.Reason,
         Notes = a.Notes,
         CancellationReason = a.CancellationReason,
+        ServiceOfferingId = a.ServiceOfferingId,
+        ServiceName = a.ServiceOffering?.ServiceName,
+        ServicePrice = a.ServiceOffering?.Price,
         CreatedAt = a.CreatedAt,
         IsArchived = a.IsArchived
     };

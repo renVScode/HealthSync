@@ -226,6 +226,83 @@ public class DoctorService : IDoctorService
         return slots;
     }
 
+    // Service Offerings
+    public async Task<List<ServiceOfferingResponseDto>> GetServiceOfferingsAsync(Guid doctorId)
+    {
+        var services = await _uow.DoctorServiceOfferings
+            .FindAsync(s => s.DoctorId == doctorId);
+        return services.Select(s => new ServiceOfferingResponseDto
+        {
+            Id = s.Id,
+            DoctorId = s.DoctorId,
+            ServiceName = s.ServiceName,
+            Description = s.Description,
+            Price = s.Price,
+            IsActive = s.IsActive,
+            CreatedAt = s.CreatedAt
+        }).ToList();
+    }
+
+    public async Task<ServiceOfferingResponseDto> AddServiceOfferingAsync(Guid doctorId, CreateServiceOfferingDto dto)
+    {
+        var service = new DoctorServiceOffering
+        {
+            DoctorId = doctorId,
+            ServiceName = dto.ServiceName,
+            Description = dto.Description,
+            Price = dto.Price
+        };
+        await _uow.DoctorServiceOfferings.AddAsync(service);
+        await _uow.SaveChangesAsync();
+
+        return new ServiceOfferingResponseDto
+        {
+            Id = service.Id,
+            DoctorId = service.DoctorId,
+            ServiceName = service.ServiceName,
+            Description = service.Description,
+            Price = service.Price,
+            IsActive = service.IsActive,
+            CreatedAt = service.CreatedAt
+        };
+    }
+
+    public async Task<ServiceOfferingResponseDto?> UpdateServiceOfferingAsync(Guid doctorId, Guid serviceId, UpdateServiceOfferingDto dto)
+    {
+        var service = (await _uow.DoctorServiceOfferings
+            .FindAsync(s => s.DoctorId == doctorId && s.Id == serviceId)).FirstOrDefault();
+        if (service == null) return null;
+
+        if (dto.ServiceName != null) service.ServiceName = dto.ServiceName;
+        if (dto.Description != null) service.Description = dto.Description;
+        if (dto.Price.HasValue) service.Price = dto.Price.Value;
+        if (dto.IsActive.HasValue) service.IsActive = dto.IsActive.Value;
+        service.UpdatedAt = DateTime.UtcNow;
+        await _uow.SaveChangesAsync();
+
+        return new ServiceOfferingResponseDto
+        {
+            Id = service.Id,
+            DoctorId = service.DoctorId,
+            ServiceName = service.ServiceName,
+            Description = service.Description,
+            Price = service.Price,
+            IsActive = service.IsActive,
+            CreatedAt = service.CreatedAt
+        };
+    }
+
+    public async Task<bool> DeleteServiceOfferingAsync(Guid doctorId, Guid serviceId)
+    {
+        var service = (await _uow.DoctorServiceOfferings
+            .FindAsync(s => s.DoctorId == doctorId && s.Id == serviceId)).FirstOrDefault();
+        if (service == null) return false;
+
+        await _uow.DoctorServiceOfferings.DeleteAsync(service);
+        await _uow.SaveChangesAsync();
+        return true;
+    }
+
     private static DoctorResponseDto MapToDto(Doctor d) => new()
     {
         Id = d.Id,

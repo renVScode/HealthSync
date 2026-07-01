@@ -3,6 +3,7 @@ using System;
 using HealthSync.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HealthSync.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260630153547_AddDoctorServiceOfferings")]
+    partial class AddDoctorServiceOfferings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -54,9 +57,6 @@ namespace HealthSync.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.Property<Guid?>("ServiceOfferingId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("StartTime")
                         .HasColumnType("timestamp with time zone");
 
@@ -74,8 +74,6 @@ namespace HealthSync.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PatientId");
-
-                    b.HasIndex("ServiceOfferingId");
 
                     b.HasIndex("DoctorId", "StartTime");
 
@@ -531,100 +529,6 @@ namespace HealthSync.Infrastructure.Migrations
                     b.ToTable("InventoryTransactions");
                 });
 
-            modelBuilder.Entity("HealthSync.Core.Entities.LabOrder", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DoctorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("LabTestId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime>("OrderedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("PatientId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ReferenceRange")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Result")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ResultSummary")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DoctorId");
-
-                    b.HasIndex("LabTestId");
-
-                    b.HasIndex("PatientId", "Status");
-
-                    b.ToTable("LabOrders");
-                });
-
-            modelBuilder.Entity("HealthSync.Core.Entities.LabTest", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Category")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(10,2)");
-
-                    b.Property<string>("TestName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TestName")
-                        .IsUnique();
-
-                    b.ToTable("LabTests");
-                });
-
             modelBuilder.Entity("HealthSync.Core.Entities.MedicalRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -962,15 +866,9 @@ namespace HealthSync.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("HealthSync.Core.Entities.DoctorServiceOffering", "ServiceOffering")
-                        .WithMany()
-                        .HasForeignKey("ServiceOfferingId");
-
                     b.Navigation("Doctor");
 
                     b.Navigation("Patient");
-
-                    b.Navigation("ServiceOffering");
                 });
 
             modelBuilder.Entity("HealthSync.Core.Entities.AuditLog", b =>
@@ -1081,33 +979,6 @@ namespace HealthSync.Infrastructure.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("InventoryBatch");
-                });
-
-            modelBuilder.Entity("HealthSync.Core.Entities.LabOrder", b =>
-                {
-                    b.HasOne("HealthSync.Core.Entities.Doctor", "Doctor")
-                        .WithMany()
-                        .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("HealthSync.Core.Entities.LabTest", "LabTest")
-                        .WithMany("LabOrders")
-                        .HasForeignKey("LabTestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("HealthSync.Core.Entities.Patient", "Patient")
-                        .WithMany()
-                        .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Doctor");
-
-                    b.Navigation("LabTest");
-
-                    b.Navigation("Patient");
                 });
 
             modelBuilder.Entity("HealthSync.Core.Entities.MedicalRecord", b =>
@@ -1248,11 +1119,6 @@ namespace HealthSync.Infrastructure.Migrations
             modelBuilder.Entity("HealthSync.Core.Entities.InventoryBatch", b =>
                 {
                     b.Navigation("Transactions");
-                });
-
-            modelBuilder.Entity("HealthSync.Core.Entities.LabTest", b =>
-                {
-                    b.Navigation("LabOrders");
                 });
 
             modelBuilder.Entity("HealthSync.Core.Entities.MedicalRecord", b =>

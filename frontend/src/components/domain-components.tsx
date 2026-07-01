@@ -149,11 +149,114 @@ export function StockAlertBadge({ currentStock, reorderLevel }: { currentStock: 
 
 // Billing
 
+function PaymentDetailsForm({ method, details, onChange }: { method: PaymentMethod; details: any; onChange: (d: any) => void }) {
+  const set = (field: string, value: any) => onChange({ ...details, [field]: value });
+
+  switch (method) {
+    case PaymentMethod.Cash:
+      return null;
+
+    case PaymentMethod.Card:
+      return (
+        <>
+          <div className="col-span-2">
+            <label className="block text-xs font-medium mb-1">Cardholder Name</label>
+            <input value={details.cardHolderName || ''} onChange={(e) => set('cardHolderName', e.target.value)}
+              className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm" placeholder="Full name on card" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1">Card (last 4 digits)</label>
+            <input value={details.cardLastFour || ''} onChange={(e) => set('cardLastFour', e.target.value.slice(0, 4))}
+              className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm" placeholder="1234" maxLength={4} />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1">Approval Code</label>
+            <input value={details.approvalCode || ''} onChange={(e) => set('approvalCode', e.target.value)}
+              className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm" placeholder="APP123456" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1">Bank</label>
+            <input value={details.bankName || ''} onChange={(e) => set('bankName', e.target.value)}
+              className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm" placeholder="e.g. BDO, BPI" />
+          </div>
+        </>
+      );
+
+    case PaymentMethod.Online:
+      return (
+        <>
+          <div>
+            <label className="block text-xs font-medium mb-1">Gateway</label>
+            <select value={details.gateway || 'GCash'} onChange={(e) => set('gateway', e.target.value)}
+              className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm">
+              <option value="GCash">GCash</option>
+              <option value="Maya">Maya</option>
+              <option value="PayMaya">PayMaya</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="PayPal">PayPal</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1">Transaction Reference</label>
+            <input value={details.transactionReference || ''} onChange={(e) => set('transactionReference', e.target.value)}
+              className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm" placeholder="Reference #" />
+          </div>
+        </>
+      );
+
+    case PaymentMethod.Insurance:
+      return (
+        <>
+          <div>
+            <label className="block text-xs font-medium mb-1">Insurance Provider</label>
+            <input value={details.provider || ''} onChange={(e) => set('provider', e.target.value)}
+              className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm" placeholder="e.g. PhilHealth" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1">Policy Number</label>
+            <input value={details.policyNumber || ''} onChange={(e) => set('policyNumber', e.target.value)}
+              className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm" placeholder="Policy #" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1">Authorization Code</label>
+            <input value={details.authorizationCode || ''} onChange={(e) => set('authorizationCode', e.target.value)}
+              className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm" placeholder="Auth code" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium mb-1">Coverage (%)</label>
+            <input type="number" min={0} max={100} value={details.coveragePercent || 100} onChange={(e) => set('coveragePercent', parseInt(e.target.value) || 0)}
+              className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm" />
+          </div>
+        </>
+      );
+
+    default:
+      return null;
+  }
+}
+
+function paymentDetailsSummary(method: PaymentMethod, details: any): string {
+  if (!details) return '';
+  switch (method) {
+    case PaymentMethod.Cash:
+      return '';
+    case PaymentMethod.Card:
+      return `${details.cardHolderName || ''} ••••${details.cardLastFour || ''}${details.approvalCode ? ` (${details.approvalCode})` : ''}`;
+    case PaymentMethod.Online:
+      return `${details.gateway || ''}${details.transactionReference ? ` #${details.transactionReference}` : ''}`;
+    case PaymentMethod.Insurance:
+      return `${details.provider || ''} ${details.policyNumber || ''}`;
+    default:
+      return '';
+  }
+}
+
 export function InvoiceView({ billing, onRefresh }: { billing: any; onRefresh?: () => void }) {
   const [payments, setPayments] = useState<any[]>(billing.payments || []);
   const [showAddPayment, setShowAddPayment] = useState(false);
   const [amount, setAmount] = useState(billing.balance > 0 ? billing.balance : 0);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.Online);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.Cash);
+  const [paymentDetails, setPaymentDetails] = useState<any>({});
   const [transactionRef, setTransactionRef] = useState('');
   const [qrFile, setQrFile] = useState<File | null>(null);
   const [qrPreview, setQrPreview] = useState('');
@@ -171,6 +274,12 @@ export function InvoiceView({ billing, onRefresh }: { billing: any; onRefresh?: 
     }
   };
 
+  const handleMethodChange = (value: string) => {
+    const method = parseInt(value) as PaymentMethod;
+    setPaymentMethod(method);
+    setPaymentDetails({});
+  };
+
   const submitPayment = async () => {
     setSubmitting(true);
     setError('');
@@ -184,6 +293,7 @@ export function InvoiceView({ billing, onRefresh }: { billing: any; onRefresh?: 
       const payload: any = { amount, paymentMethod };
       if (transactionRef) payload.transactionReference = transactionRef;
       if (qrUrl) payload.qrCodeImageUrl = qrUrl;
+      if (Object.keys(paymentDetails).length > 0) payload.paymentDetails = JSON.stringify(paymentDetails);
 
       await billingService.addPayment(billing.id, payload);
       const refreshed = await billingService.getById(billing.id);
@@ -192,6 +302,7 @@ export function InvoiceView({ billing, onRefresh }: { billing: any; onRefresh?: 
       setQrFile(null);
       setQrPreview('');
       setTransactionRef('');
+      setPaymentDetails({});
       setAmount(billing.balance > 0 ? billing.balance : 0);
       onRefresh?.();
     } catch {
@@ -210,6 +321,11 @@ export function InvoiceView({ billing, onRefresh }: { billing: any; onRefresh?: 
     } catch {
       setError('Failed to verify payment');
     }
+  };
+
+  const parseDetails = (px: any) => {
+    if (!px.paymentDetails) return null;
+    try { return JSON.parse(px.paymentDetails); } catch { return null; }
   };
 
   return (
@@ -280,15 +396,16 @@ export function InvoiceView({ billing, onRefresh }: { billing: any; onRefresh?: 
                   className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm" />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1">Payment Method</label>
-                <select value={paymentMethod} onChange={(e) => setPaymentMethod(parseInt(e.target.value) as PaymentMethod)}
+                <label className="block text-xs font-medium mb-1">Mode of Payment</label>
+                <select value={paymentMethod} onChange={(e) => handleMethodChange(e.target.value)}
                   className="w-full px-3 py-1.5 border border-[#E9ECEF] rounded text-sm">
                   <option value={PaymentMethod.Cash}>Cash</option>
                   <option value={PaymentMethod.Card}>Card</option>
-                  <option value={PaymentMethod.Online}>Online</option>
+                  <option value={PaymentMethod.Online}>Online / GCash</option>
                   <option value={PaymentMethod.Insurance}>Insurance</option>
                 </select>
               </div>
+              <PaymentDetailsForm method={paymentMethod} details={paymentDetails} onChange={setPaymentDetails} />
               <div className="col-span-2">
                 <label className="block text-xs font-medium mb-1">Transaction Reference</label>
                 <input value={transactionRef} onChange={(e) => setTransactionRef(e.target.value)}
@@ -316,29 +433,33 @@ export function InvoiceView({ billing, onRefresh }: { billing: any; onRefresh?: 
         {payments.length > 0 && (
           <div className="space-y-2 mt-3">
             <p className="text-sm font-medium text-[#6C757D]">Payment History</p>
-            {payments.map((p: any) => (
-              <div key={p.id} className="flex items-center justify-between p-3 bg-[#F8F9FA] rounded-md text-sm">
-                <div className="flex items-center gap-3">
-                  <span className="font-medium">{PaymentMethod[p.paymentMethod]}</span>
-                  <span>{formatCurrency(p.amount)}</span>
-                  {p.transactionReference && <span className="text-[#6C757D]">#{p.transactionReference}</span>}
-                  <span className="text-[#6C757D]">{formatDate(p.receivedAt)}</span>
+            {payments.map((p: any) => {
+              const details = parseDetails(p);
+              return (
+                <div key={p.id} className="flex items-center justify-between p-3 bg-[#F8F9FA] rounded-md text-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium">{PaymentMethod[p.paymentMethod]}</span>
+                    <span>{formatCurrency(p.amount)}</span>
+                    {p.transactionReference && <span className="text-[#6C757D]">#{p.transactionReference}</span>}
+                    {details && <span className="text-[#6C757D] text-xs">{paymentDetailsSummary(p.paymentMethod, details)}</span>}
+                    <span className="text-[#6C757D]">{formatDate(p.receivedAt)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {p.qrCodeImageUrl && (
+                      <img src={p.qrCodeImageUrl} alt="QR" className="w-8 h-8 object-contain border rounded cursor-pointer"
+                        onClick={() => window.open(p.qrCodeImageUrl, '_blank')} title="View QR Code" />
+                    )}
+                    {p.isVerified ? (
+                      <span className="text-xs text-[#28A745] font-medium">Verified</span>
+                    ) : billing.status !== BillingStatus.Cancelled && (
+                      <Button size="sm" onClick={() => handleVerify(p.id)} className="text-xs !px-2 !py-1">
+                        Verify
+                      </Button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {p.qrCodeImageUrl && (
-                    <img src={p.qrCodeImageUrl} alt="QR" className="w-8 h-8 object-contain border rounded cursor-pointer"
-                      onClick={() => window.open(p.qrCodeImageUrl, '_blank')} title="View QR Code" />
-                  )}
-                  {p.isVerified ? (
-                    <span className="text-xs text-[#28A745] font-medium">Verified</span>
-                  ) : billing.status !== BillingStatus.Cancelled && (
-                    <Button size="sm" onClick={() => handleVerify(p.id)} className="text-xs !px-2 !py-1">
-                      Verify
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

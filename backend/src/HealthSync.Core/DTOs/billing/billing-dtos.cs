@@ -26,6 +26,7 @@ public class CreatePaymentDto
     public PaymentMethod PaymentMethod { get; set; }
     public string? TransactionReference { get; set; }
     public string? QrCodeImageUrl { get; set; }
+    public string? PaymentDetails { get; set; }
     public string? Notes { get; set; }
 }
 
@@ -64,6 +65,7 @@ public class PaymentResponseDto
     public PaymentMethod PaymentMethod { get; set; }
     public string? TransactionReference { get; set; }
     public string? QrCodeImageUrl { get; set; }
+    public string? PaymentDetails { get; set; }
     public bool IsVerified { get; set; }
     public string? ReceivedBy { get; set; }
     public DateTime ReceivedAt { get; set; }

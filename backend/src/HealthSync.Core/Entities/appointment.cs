@@ -14,6 +14,7 @@ public class Appointment
     public string? Reason { get; set; }
     public string? Notes { get; set; }
     public string? CancellationReason { get; set; }
+    public Guid? ServiceOfferingId { get; set; }
     public bool IsArchived { get; set; } = false;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -21,6 +22,7 @@ public class Appointment
     // navigation
     public Patient Patient { get; set; } = null!;
     public Doctor Doctor { get; set; } = null!;
+    public DoctorServiceOffering? ServiceOffering { get; set; }
     public MedicalRecord? MedicalRecord { get; set; }
     public Billing? Billing { get; set; }
 }

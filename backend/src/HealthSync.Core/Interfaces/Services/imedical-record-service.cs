@@ -6,7 +6,7 @@ namespace HealthSync.Core.Interfaces.Services;
 
 public interface IMedicalRecordService
 {
-    Task<PaginatedResult<MedicalRecordResponseDto>> GetAllAsync(int page, int pageSize, bool? isArchived = null);
+    Task<PaginatedResult<MedicalRecordResponseDto>> GetAllAsync(int page, int pageSize, bool? isArchived = null, string? status = null);
     Task<List<MedicalRecordResponseDto>> GetByPatientIdAsync(Guid patientId);
     Task<MedicalRecordResponseDto?> GetByIdAsync(Guid id);
     Task<MedicalRecordResponseDto> CreateAsync(CreateMedicalRecordDto dto, string userId);
@@ -17,6 +17,7 @@ public interface IMedicalRecordService
     Task<List<PrescriptionResponseDto>> GetPrescriptionsByStatusAsync(PrescriptionStatus status, int page = 1, int pageSize = 25);
     Task<bool> MarkPrescriptionsAsPaidAsync(Guid medicalRecordId);
     Task<bool> DispensePrescriptionAsync(Guid prescriptionId, DispensePrescriptionDto dto, string userId);
+    Task<bool> CompleteAsync(Guid id);
     Task<bool> ArchiveAsync(Guid id);
     Task<bool> RestoreAsync(Guid id);
 }

@@ -22,6 +22,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<Billing> Billings => Set<Billing>();
     public DbSet<BillingItem> BillingItems => Set<BillingItem>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<DoctorServiceOffering> DoctorServiceOfferings => Set<DoctorServiceOffering>();
+    public DbSet<LabTest> LabTests => Set<LabTest>();
+    public DbSet<LabOrder> LabOrders => Set<LabOrder>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -188,8 +191,44 @@ public class ApplicationDbContext : DbContext
             entity.Property(p => p.PaymentMethod).HasConversion<string>().HasMaxLength(20).IsRequired();
             entity.Property(p => p.TransactionReference).HasMaxLength(255);
             entity.Property(p => p.QrCodeImageUrl).HasMaxLength(500);
+            entity.Property(p => p.PaymentDetails);
             entity.HasOne(p => p.Billing).WithMany(b => b.Payments).HasForeignKey(p => p.BillingId);
             entity.HasOne(p => p.ReceivedBy).WithMany().HasForeignKey(p => p.ReceivedById).OnDelete(DeleteBehavior.NoAction);
+        });
+
+        // LabTest
+        builder.Entity<LabTest>(entity =>
+        {
+            entity.Property(t => t.TestName).HasMaxLength(200).IsRequired();
+            entity.Property(t => t.Category).HasMaxLength(100);
+            entity.Property(t => t.Description).HasMaxLength(500);
+            entity.Property(t => t.Price).HasColumnType("decimal(10,2)");
+            entity.HasIndex(t => t.TestName).IsUnique();
+        });
+
+        // LabOrder
+        builder.Entity<LabOrder>(entity =>
+        {
+            entity.Property(o => o.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(o => o.Result).HasColumnType("text");
+            entity.Property(o => o.ResultSummary).HasMaxLength(500);
+            entity.Property(o => o.Notes).HasMaxLength(500);
+            entity.Property(o => o.ReferenceRange).HasMaxLength(200);
+            entity.HasOne(o => o.Patient).WithMany().HasForeignKey(o => o.PatientId);
+            entity.HasOne(o => o.Doctor).WithMany().HasForeignKey(o => o.DoctorId);
+            entity.HasOne(o => o.LabTest).WithMany(t => t.LabOrders).HasForeignKey(o => o.LabTestId);
+            entity.HasIndex(o => new { o.PatientId, o.Status });
+            entity.HasIndex(o => o.DoctorId);
+        });
+
+        // DoctorServiceOffering
+        builder.Entity<DoctorServiceOffering>(entity =>
+        {
+            entity.Property(s => s.ServiceName).HasMaxLength(200).IsRequired();
+            entity.Property(s => s.Description).HasMaxLength(500);
+            entity.Property(s => s.Price).HasColumnType("decimal(10,2)");
+            entity.HasOne(s => s.Doctor).WithMany().HasForeignKey(s => s.DoctorId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(s => new { s.DoctorId, s.ServiceName }).IsUnique();
         });
 
         // AuditLog

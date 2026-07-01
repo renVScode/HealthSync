@@ -75,6 +75,9 @@ builder.Services.AddApplicationServices();
 builder.Services.AddScoped<IAppointmentNotificationService, SignalRNotificationService>();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Background services
+builder.Services.AddHostedService<AppointmentNoShowService>();
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {

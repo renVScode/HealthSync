@@ -36,6 +36,7 @@ public class MedicalRecordResponseDto
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public bool IsArchived { get; set; }
+    public bool IsCompleted { get; set; }
     public List<PrescriptionResponseDto> Prescriptions { get; set; } = [];
 }
 
@@ -55,6 +56,7 @@ public class PrescriptionResponseDto
     public Guid MedicalRecordId { get; set; }
     public Guid MedicineId { get; set; }
     public string MedicineName { get; set; } = string.Empty;
+    public string? PatientName { get; set; }
     public string Dosage { get; set; } = string.Empty;
     public string Frequency { get; set; } = string.Empty;
     public string? Duration { get; set; }

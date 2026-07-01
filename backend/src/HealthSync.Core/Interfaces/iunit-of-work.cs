@@ -21,6 +21,9 @@ public interface IUnitOfWork : IDisposable
     IRepository<Billing> Billings { get; }
     IRepository<BillingItem> BillingItems { get; }
     IRepository<Payment> Payments { get; }
+    IRepository<DoctorServiceOffering> DoctorServiceOfferings { get; }
+    IRepository<LabTest> LabTests { get; }
+    IRepository<LabOrder> LabOrders { get; }
     IRepository<AuditLog> AuditLogs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

@@ -22,10 +22,12 @@ A full-stack clinic management platform built with Clean Architecture. Handles p
 - **Patient management** — Full CRUD with search, medical history timeline (collapsible), allergies, emergency contacts
 - **Electronic Medical Records** — Diagnoses, prescriptions, treatment plans, confidentiality flags
 - **Pharmacy inventory** — Batch tracking with expiry dates, stock movements (stock-in, dispensing, adjustments), reorder alerts
-- **Billing & payments** — Invoicing with line items, multi-payment support (Cash/Card/Online/Insurance), partial payments
+- **Billing & payments** — Invoicing with line items, multi-payment support (Cash/Card/Online/Insurance), partial payments, conditional per-method fields (Card — cardholder/last4/approval code; Online — gateway/reference; Insurance — provider/policy/auth/coverage)
 - **Reporting** — Aggregated analytics across appointments, revenue, inventory
 - **Archive & restore** — Soft-delete users, patients, and medical records; view and restore them from a dedicated Archives page. Archived users are automatically set inactive.
 - **Custom confirmation dialogs** — A reusable `ConfirmDialog` modal component replaces native `window.confirm()` across all destructive actions.
+- **Doctor service offerings** — Per-doctor service catalog (ECG, wound dressing, etc.) with pricing, active/inactive toggle. Managed via a dedicated Services tab on DoctorDetail.
+- **Lab tests module** — Catalog of lab tests with prices (Admin-managed), test ordering by Doctors, status lifecycle (Ordered→Collected→Processing→Completed), result entry with reference ranges
 - **Real-time updates** — Live appointment changes and push notifications via SignalR
 - **Audit logging** — All create/update/delete operations tracked with JSON snapshots
 - **Docker support** — One-command deployment, no local tool conflicts
@@ -52,7 +54,7 @@ A full-stack clinic management platform built with Clean Architecture. Handles p
 └──────────────────────────────────────────────────────────┘
 ```
 
-### Domain Model (14 entities)
+### Domain Model (17 entities)
 
 ```
 Patients ──1:M── Appointments ──1:0..1── MedicalRecords ──1:M── Prescriptions
@@ -66,6 +68,11 @@ Patients ──1:M── Appointments ──1:0..1── MedicalRecords ──1:
                 ──1:M── TimeOffs
                 ──1:M── Appointments
                 ──1:M── MedicalRecords
+                ──1:M── DoctorServiceOfferings
+                ──1:M── LabOrders
+
+LabTests ──1:M── LabOrders ──M:1── Patients
+                         ──M:1── Doctors
 
 Medicines ──1:M── InventoryBatches ──1:M── InventoryTransactions
 
@@ -117,7 +124,7 @@ bun run dev
 | `reception` | `Recept@123` | Receptionist |
 | `pharmacist` | `Pharma@123` | Pharmacist |
 
-## API Overview (10 Controllers)
+## API Overview (11 Controllers)
 
 | Endpoint | Description |
 |---|---|
@@ -131,6 +138,9 @@ bun run dev
 | `GET/POST /api/medicines` | Medicine catalog |
 | `GET/POST /api/inventory` | Stock batches + transactions |
 | `GET /api/reports` | Aggregated analytics |
+| `GET/POST/PUT/DELETE /api/labtests` | Lab test catalog (Admin) |
+| `GET/POST/PUT/DELETE /api/labtests/orders` | Lab order lifecycle + result entry |
+| `GET/POST/PUT/DELETE /api/doctors/{id}/services` | Per-doctor service offerings |
 | `PATCH /api/patients/{id}/archive\|restore` | Archive or restore a patient |
 | `PATCH /api/users/{id}/archive\|restore` | Archive or restore a user |
 | `PATCH /api/medical-records/{id}/archive\|restore` | Archive or restore a medical record |

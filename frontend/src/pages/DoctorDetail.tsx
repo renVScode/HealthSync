@@ -14,7 +14,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { PAGE_SIZE } from '../utils/constants';
 
-type Tab = 'profile' | 'performance' | 'patients' | 'availability' | 'timeoff';
+type Tab = 'profile' | 'performance' | 'patients' | 'services' | 'availability' | 'timeoff';
 
 export function DoctorDetail() {
   const { id } = useParams<{ id: string }>();
@@ -90,6 +90,7 @@ export function DoctorDetail() {
     { key: 'profile', label: 'Profile' },
     { key: 'performance', label: 'Performance' },
     { key: 'patients', label: 'Patients' },
+    { key: 'services', label: 'Services' },
   ];
   if (canEdit) {
     tabs.push({ key: 'availability', label: 'Availability' });
@@ -255,6 +256,10 @@ export function DoctorDetail() {
         </Card>
       )}
 
+      {activeTab === 'services' && (
+        canEdit ? <DoctorServices doctorId={id!} /> : <DoctorServicesReadOnly doctorId={id!} />
+      )}
+
       {activeTab === 'availability' && canEdit && (
         <DoctorAvailability doctorId={id!} />
       )}
@@ -267,6 +272,154 @@ export function DoctorDetail() {
         {previewImg && <img src={previewImg} alt="License" className="w-full" />}
       </Modal>
     </div>
+  );
+}
+
+function DoctorServices({ doctorId }: { doctorId: string }) {
+  const [services, setServices] = useState<any[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({ serviceName: '', description: '', price: '' });
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(async () => {
+    const res = await doctorService.getServiceOfferings(doctorId);
+    setServices(res.data);
+  }, [doctorId]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const resetForm = () => { setForm({ serviceName: '', description: '', price: '' }); setEditingId(null); };
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      const payload = { ...form, price: parseFloat(form.price) || 0 };
+      if (editingId) {
+        await doctorService.updateServiceOffering(doctorId, editingId, payload);
+      } else {
+        await doctorService.addServiceOffering(doctorId, payload);
+      }
+      resetForm();
+      setShowForm(false);
+      await load();
+    } finally { setLoading(false); }
+  };
+
+  const handleEdit = (s: any) => {
+    setForm({ serviceName: s.serviceName, description: s.description || '', price: s.price.toString() });
+    setEditingId(s.id);
+    setShowForm(true);
+  };
+
+  const handleToggle = async (s: any) => {
+    await doctorService.updateServiceOffering(doctorId, s.id, { isActive: !s.isActive });
+    await load();
+  };
+
+  const handleDelete = async (s: any) => {
+    if (!confirm(`Delete "${s.serviceName}"?`)) return;
+    await doctorService.deleteServiceOffering(doctorId, s.id);
+    await load();
+  };
+
+  return (
+    <Card title="Services" actions={
+      <Button size="sm" onClick={() => { resetForm(); setShowForm(!showForm); }}>
+        {showForm ? 'Cancel' : '+ Add Service'}
+      </Button>
+    }>
+      {showForm && (
+        <div className="mb-4 p-4 bg-[#F8F9FA] rounded-md space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium mb-1">Service Name</label>
+              <input value={form.serviceName} onChange={(e) => setForm({...form, serviceName: e.target.value})}
+                className="w-full px-3 py-1.5 border rounded text-sm" placeholder="e.g. ECG" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">Price (₱)</label>
+              <input type="number" step="0.01" value={form.price} onChange={(e) => setForm({...form, price: e.target.value})}
+                className="w-full px-3 py-1.5 border rounded text-sm" />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-xs font-medium mb-1">Description</label>
+              <input value={form.description} onChange={(e) => setForm({...form, description: e.target.value})}
+                className="w-full px-3 py-1.5 border rounded text-sm" placeholder="Optional" />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" size="sm" onClick={() => { resetForm(); setShowForm(false); }}>Cancel</Button>
+            <Button size="sm" onClick={handleSubmit} isLoading={loading}>
+              {editingId ? 'Update' : 'Add Service'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {services.length === 0 ? (
+        <p className="text-sm text-[#6C757D]">No services added yet</p>
+      ) : (
+        <div className="space-y-2">
+          {services.map((s: any) => (
+            <div key={s.id} className="flex items-center justify-between p-3 bg-[#F8F9FA] rounded-md">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium">{s.serviceName}</p>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${s.isActive ? 'bg-green-100 text-[#28A745]' : 'bg-gray-100 text-[#6C757D]'}`}>
+                    {s.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                {s.description && <p className="text-xs text-[#6C757D]">{s.description}</p>}
+                <p className="text-xs font-medium text-[#212529]">{formatCurrency(s.price)}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => handleToggle(s)} className="p-1.5 rounded hover:bg-gray-200 text-[#6C757D] hover:text-[#212529]" title={s.isActive ? 'Deactivate' : 'Activate'}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="1" y="5" width="22" height="14" rx="7" ry="7"/><circle cx={s.isActive ? '15' : '9'} cy="12" r="3"/>
+                  </svg>
+                </button>
+                <button onClick={() => handleEdit(s)} className="p-1.5 rounded hover:bg-gray-200 text-[#3B82F6] hover:text-[#2563EB]" title="Edit">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>
+                  </svg>
+                </button>
+                <button onClick={() => handleDelete(s)} className="p-1.5 rounded hover:bg-gray-200 text-[#DC3545] hover:text-[#B91C1C]" title="Delete">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function DoctorServicesReadOnly({ doctorId }: { doctorId: string }) {
+  const [services, setServices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    doctorService.getServiceOfferings(doctorId).then((res) => {
+      setServices(res.data);
+      setLoading(false);
+    });
+  }, [doctorId]);
+
+  return (
+    <Card title="Services">
+      <DataTable
+        columns={[
+          { key: 'serviceName', header: 'Service Name' },
+          { key: 'price', header: 'Price', render: (s: any) => formatCurrency(s.price) },
+        ]}
+        data={services.filter((s: any) => s.isActive)}
+        isLoading={loading}
+      />
+    </Card>
   );
 }
 

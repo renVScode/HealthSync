@@ -9,6 +9,7 @@ public class CreateAppointmentDto
     public DateTime StartTime { get; set; }
     public string? Reason { get; set; }
     public string? Notes { get; set; }
+    public Guid? ServiceOfferingId { get; set; }
 }
 
 public class UpdateAppointmentDto
@@ -16,6 +17,7 @@ public class UpdateAppointmentDto
     public DateTime? StartTime { get; set; }
     public string? Reason { get; set; }
     public string? Notes { get; set; }
+    public Guid? ServiceOfferingId { get; set; }
 }
 
 public class UpdateAppointmentStatusDto
@@ -38,6 +40,9 @@ public class AppointmentResponseDto
     public string? Reason { get; set; }
     public string? Notes { get; set; }
     public string? CancellationReason { get; set; }
+    public Guid? ServiceOfferingId { get; set; }
+    public string? ServiceName { get; set; }
+    public decimal? ServicePrice { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool IsArchived { get; set; }
 }

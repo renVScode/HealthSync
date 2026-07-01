@@ -10,6 +10,7 @@ public class Payment
     public PaymentMethod PaymentMethod { get; set; }
     public string? TransactionReference { get; set; }
     public string? QrCodeImageUrl { get; set; }
+    public string? PaymentDetails { get; set; }
     public bool IsVerified { get; set; }
     public Guid ReceivedById { get; set; }
     public string? Notes { get; set; }

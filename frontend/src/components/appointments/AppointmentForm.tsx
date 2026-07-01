@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../common/Button';
+import { doctorService } from '../../services/doctorService';
 
 interface PatientOption { id: string; name: string; phone?: string; }
 
@@ -14,9 +15,21 @@ interface AppointmentFormProps {
 export function AppointmentForm({ onSubmit, patients, doctors, selectedDate, isLoading }: AppointmentFormProps) {
   const [formData, setFormData] = useState({
     patientId: '', doctorId: '', startTime: selectedDate || '',
-    reason: '', notes: '',
+    reason: '', notes: '', serviceOfferingId: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serviceOfferings, setServiceOfferings] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (formData.doctorId) {
+      doctorService.getServiceOfferings(formData.doctorId).then((res) => {
+        const data = Array.isArray(res.data) ? res.data : res.data.items || [];
+        setServiceOfferings(data.filter((s: any) => s.isActive));
+      });
+    } else {
+      setServiceOfferings([]);
+    }
+  }, [formData.doctorId]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -57,6 +70,17 @@ export function AppointmentForm({ onSubmit, patients, doctors, selectedDate, isL
           {doctors.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
         {errors.doctorId && <p className="text-sm text-[#DC3545] mt-1">{errors.doctorId}</p>}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-[#212529] mb-1">Service (optional)</label>
+        <select
+          value={formData.serviceOfferingId}
+          onChange={(e) => setFormData({ ...formData, serviceOfferingId: e.target.value })}
+          className="w-full px-4 py-2 border border-[#E9ECEF] rounded-md"
+        >
+          <option value="">No service</option>
+          {serviceOfferings.map((s: any) => <option key={s.id} value={s.id}>{s.serviceName} — ₱{Number(s.price).toLocaleString()}</option>)}
+        </select>
       </div>
       <div>
         <label className="block text-sm font-medium text-[#212529] mb-1">Date & Time</label>

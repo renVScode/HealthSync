@@ -12,6 +12,7 @@ import { Doctors } from './pages/Doctors';
 import { DoctorDetail } from './pages/DoctorDetail';
 import { Appointments } from './pages/Appointments';
 import { MedicalRecords } from './pages/MedicalRecords';
+import { LabTests } from './pages/LabTests';
 import { Billings } from './pages/Billings';
 import { Inventory } from './pages/Inventory';
 import { Reports } from './pages/Reports';
@@ -35,9 +36,10 @@ export function AppRoutes() {
         <Route path="patients" element={<ProtectedRoute roles={['Admin', 'Doctor', 'Receptionist']}><Patients /></ProtectedRoute>} />
         <Route path="patients/:id" element={<ProtectedRoute roles={['Admin', 'Doctor', 'Receptionist']}><PatientDetail /></ProtectedRoute>} />
         <Route path="doctors" element={<ProtectedRoute roles={['Admin', 'Doctor', 'Receptionist']}><Doctors /></ProtectedRoute>} />
-        <Route path="doctors/:id" element={<ProtectedRoute roles={['Admin', 'Doctor']}><DoctorDetail /></ProtectedRoute>} />
+        <Route path="doctors/:id" element={<ProtectedRoute roles={['Admin', 'Doctor', 'Receptionist']}><DoctorDetail /></ProtectedRoute>} />
         <Route path="appointments" element={<Appointments />} />
         <Route path="medical-records" element={<MedicalRecords />} />
+        <Route path="lab-tests" element={<LabTests />} />
         <Route path="billings" element={<ProtectedRoute roles={['Admin', 'Receptionist']}><Billings /></ProtectedRoute>} />
         <Route path="inventory" element={<ProtectedRoute roles={['Admin', 'Pharmacist']}><Inventory /></ProtectedRoute>} />
         <Route path="reports" element={<Reports />} />

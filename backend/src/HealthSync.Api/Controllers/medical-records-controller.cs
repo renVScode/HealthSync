@@ -33,9 +33,9 @@ public class MedicalRecordsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool? isArchived = null)
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20, [FromQuery] bool? isArchived = null, [FromQuery] string? status = null)
     {
-        var result = await _medicalRecordService.GetAllAsync(page, pageSize, isArchived);
+        var result = await _medicalRecordService.GetAllAsync(page, pageSize, isArchived, status);
         return Ok(new { result.Items, result.TotalCount, result.Page, result.PageSize });
     }
 
@@ -115,6 +115,22 @@ public class MedicalRecordsController : ControllerBase
             Request.Headers["User-Agent"]);
 
         return Ok(result);
+    }
+
+    [HttpPatch("{id:guid}/complete")]
+    [Authorize(Roles = "Admin,Doctor")]
+    public async Task<IActionResult> Complete(Guid id)
+    {
+        var result = await _medicalRecordService.CompleteAsync(id);
+        if (!result) return NotFound(new { message = "Record not found or already completed" });
+
+        await _auditService.LogAsync("complete", "medical-record", id,
+            null, null,
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
+        return NoContent();
     }
 
     [HttpPatch("{id:guid}/archive")]

@@ -208,4 +208,59 @@ public class DoctorsController : ControllerBase
         var slots = await _doctorService.GetAvailableSlotsAsync(id, date);
         return Ok(slots);
     }
+
+    // Service Offerings
+    [HttpGet("{id:guid}/services")]
+    public async Task<IActionResult> GetServiceOfferings(Guid id)
+    {
+        var services = await _doctorService.GetServiceOfferingsAsync(id);
+        return Ok(services);
+    }
+
+    [HttpPost("{id:guid}/services")]
+    [Authorize(Roles = "Admin,Doctor")]
+    public async Task<IActionResult> AddServiceOffering(Guid id, [FromBody] CreateServiceOfferingDto dto)
+    {
+        var result = await _doctorService.AddServiceOfferingAsync(id, dto);
+
+        await _auditService.LogAsync("create-service-offering", "doctor", id, null,
+            JsonSerializer.Serialize(result),
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
+        return Ok(result);
+    }
+
+    [HttpPut("{id:guid}/services/{serviceId:guid}")]
+    [Authorize(Roles = "Admin,Doctor")]
+    public async Task<IActionResult> UpdateServiceOffering(Guid id, Guid serviceId, [FromBody] UpdateServiceOfferingDto dto)
+    {
+        var result = await _doctorService.UpdateServiceOfferingAsync(id, serviceId, dto);
+        if (result == null) return NotFound();
+
+        await _auditService.LogAsync("update-service-offering", "doctor", id,
+            null, JsonSerializer.Serialize(result),
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
+        return Ok(result);
+    }
+
+    [HttpDelete("{id:guid}/services/{serviceId:guid}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteServiceOffering(Guid id, Guid serviceId)
+    {
+        var deleted = await _doctorService.DeleteServiceOfferingAsync(id, serviceId);
+        if (!deleted) return NotFound();
+
+        await _auditService.LogAsync("delete-service-offering", "doctor", id,
+            null, null,
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            HttpContext.Connection.RemoteIpAddress?.ToString(),
+            Request.Headers["User-Agent"]);
+
+        return NoContent();
+    }
 }

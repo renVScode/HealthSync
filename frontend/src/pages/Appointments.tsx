@@ -80,7 +80,9 @@ export function Appointments() {
             setSubmitting(true);
             setSubmitError(null);
             try {
-              await appointmentService.create(data);
+              const payload = { ...data };
+              if (payload.serviceOfferingId === '') payload.serviceOfferingId = null;
+              await appointmentService.create(payload);
               setShowModal(false);
             } catch (err: any) {
               setSubmitError(err?.response?.data?.message || err?.message || 'Failed to schedule appointment.');
