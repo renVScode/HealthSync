@@ -145,7 +145,7 @@ export function DoctorDetail() {
         }>
           {editing ? (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div><label className="block text-sm font-medium mb-1">First Name</label>
                   <input value={editForm.firstName} onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
                          className="w-full px-3 py-2 border border-[#E9ECEF] rounded-md text-sm" /></div>
@@ -158,7 +158,7 @@ export function DoctorDetail() {
                 <div><label className="block text-sm font-medium mb-1">Email</label>
                   <input value={editForm.email} onChange={(e) => setEditForm({...editForm, email: e.target.value})}
                          className="w-full px-3 py-2 border border-[#E9ECEF] rounded-md text-sm" /></div>
-                <div className="col-span-2"><label className="block text-sm font-medium mb-1">Bio</label>
+                <div className="sm:col-span-2"><label className="block text-sm font-medium mb-1">Bio</label>
                   <textarea value={editForm.bio} onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
                             className="w-full px-3 py-2 border border-[#E9ECEF] rounded-md text-sm" rows={3} /></div>
                 <div><label className="block text-sm font-medium mb-1">Specialization</label>
@@ -168,7 +168,7 @@ export function DoctorDetail() {
                   <input type="number" value={editForm.consultationFee} onChange={(e) => setEditForm({...editForm, consultationFee: Number(e.target.value)})}
                          className="w-full px-3 py-2 border border-[#E9ECEF] rounded-md text-sm" /></div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Profile Image</label>
                   <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'profile')}
@@ -192,7 +192,7 @@ export function DoctorDetail() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><label className="text-sm text-[#6C757D]">Name</label>
                 <p className="font-medium">Dr. {doctor.firstName} {doctor.lastName}</p></div>
               <div><label className="text-sm text-[#6C757D]">Specialization</label>

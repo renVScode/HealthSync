@@ -119,7 +119,7 @@ export function Reports() {
 
       {revenueData && (
         <Card title="Revenue Summary">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {revenueCards.map((item) => (
               <div key={item.label} className="text-center p-4 bg-[#F8F9FA] rounded-lg">
                 <div className="text-xs text-[#6C757D] uppercase tracking-wider">{item.label}</div>

@@ -72,7 +72,11 @@ function SidebarItem({ item }: { item: MenuItem }) {
   );
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+export function Sidebar({ onClose }: SidebarProps) {
   const { user, hasRole, logout } = useAuth();
 
   const filteredItems = menuItems.filter((item) =>
@@ -81,11 +85,14 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 bg-[#1A4B61] flex flex-col shadow-[4px_0_12px_rgba(0,0,0,0.08)]">
-      <div className="h-16 flex items-center px-6 border-b border-white/10 shrink-0">
+      <div className="h-16 flex items-center justify-between px-6 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-3">
           <img src="/healthsync-icon.png" alt="HealthSync" className="w-8 h-8 object-contain" />
           <h1 className="text-lg font-bold text-white">HealthSync</h1>
         </div>
+        <button onClick={onClose} className="lg:hidden w-8 h-8 flex items-center justify-center rounded-md text-white/60 hover:text-white hover:bg-white/10 transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        </button>
       </div>
 
       <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
