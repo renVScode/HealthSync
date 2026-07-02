@@ -36,10 +36,10 @@ api.interceptors.response.use(
         } catch {
           sessionStorage.removeItem('accessToken');
           sessionStorage.removeItem('refreshToken');
-          window.location.href = '/login';
+          window.location.href = '/#/login';
         }
       } else {
-        window.location.href = '/login';
+        window.location.href = '/#/login';
       }
     }
 
