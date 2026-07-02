@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     sessionStorage.removeItem('accessToken');
     sessionStorage.removeItem('refreshToken');
     setUser(null);
-    window.location.href = '/login';
+    window.location.href = '/#/login';
   };
 
   const hasRole = (...roles: string[]) => {
