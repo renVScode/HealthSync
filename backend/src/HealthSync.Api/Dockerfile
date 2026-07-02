@@ -15,5 +15,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0
 WORKDIR /app
 COPY --from=build /app .
 RUN mkdir -p /app/wwwroot/uploads/doctors /app/wwwroot/uploads/payments
+ENV ASPNETCORE_ENVIRONMENT=Deploy
+ENV ASPNETCORE_URLS=http://+:5000
 EXPOSE 5000
 ENTRYPOINT ["dotnet", "HealthSync.Api.dll"]
