@@ -84,7 +84,7 @@ export function Sidebar({ onClose }: SidebarProps) {
   );
 
   return (
-    <aside className="w-64 bg-[#1A4B61] flex flex-col shadow-[4px_0_12px_rgba(0,0,0,0.08)]">
+    <aside className="w-64 bg-[#1A4B61] flex flex-col h-full shadow-[4px_0_12px_rgba(0,0,0,0.08)]">
       <div className="h-16 flex items-center justify-between px-6 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-3">
           <img src="/healthsync-icon.png" alt="HealthSync" className="w-8 h-8 object-contain" />
