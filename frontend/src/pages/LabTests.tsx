@@ -135,7 +135,7 @@ function LabCatalogView() {
             </span>
           )},
           { key: 'actions', header: 'Actions', render: (t: LabTest) => (
-            <div className="flex gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
               <button onClick={() => openEdit(t)} className="p-1.5 rounded hover:bg-[#E9ECEF]" title="Edit">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#3B82F6]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
               </button>

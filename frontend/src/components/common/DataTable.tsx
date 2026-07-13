@@ -6,6 +6,7 @@ interface Column<T> {
   header: string;
   render?: (item: T) => ReactNode;
   sortable?: boolean;
+  align?: 'left' | 'center' | 'right';
 }
 
 interface DataTableProps<T> {
@@ -36,7 +37,7 @@ export function DataTable<T extends { id: string }>({
           <thead>
             <tr className="bg-[#F0F4F8]">
               {columns.map((col) => (
-                <th key={col.key} className="px-4 py-3 text-left text-xs font-semibold text-[#6C757D] uppercase tracking-wider">
+                <th key={col.key} className={`px-4 py-3 text-xs font-semibold text-[#6C757D] uppercase tracking-wider text-${col.align || 'left'}`}>
                   {col.header}
                 </th>
               ))}
@@ -50,7 +51,7 @@ export function DataTable<T extends { id: string }>({
                 onClick={() => onRowClick?.(item)}
               >
                 {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3 text-sm text-[#212529]">
+                  <td key={col.key} className={`px-4 py-3 text-sm text-[#212529] text-${col.align || 'left'}`}>
                     {col.render ? col.render(item) : (item as any)[col.key]}
                   </td>
                 ))}
