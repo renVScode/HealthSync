@@ -85,7 +85,7 @@ export function Doctors() {
     ...(hasRole('Admin') ? [{
       key: 'isActive' as const, header: 'Active', render: (d: any) => (
         <button onClick={(e) => handleToggleActive(d, e)}
-          className={`text-xs px-2 py-0.5 rounded font-semibold ${d.isActive ? 'bg-[#D4EDDA] text-[#155724] hover:bg-[#C3E6CB]' : 'bg-[#F8D7DA] text-[#721C24] hover:bg-[#F5C6CB]'}`}
+          className={`text-xs font-semibold ${d.isActive ? 'text-[#155724]' : 'text-[#721C24]'}`}
         >
           {d.isActive ? 'Active' : 'Inactive'}
         </button>

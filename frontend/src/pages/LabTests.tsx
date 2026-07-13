@@ -25,11 +25,11 @@ const statusLabels: Record<LabOrderStatus, string> = {
 };
 
 const statusColors: Record<LabOrderStatus, string> = {
-  [LabOrderStatus.Ordered]: 'bg-blue-100 text-[#3B82F6]',
-  [LabOrderStatus.Collected]: 'bg-purple-100 text-[#8B5CF6]',
-  [LabOrderStatus.Processing]: 'bg-yellow-100 text-[#FFC107]',
-  [LabOrderStatus.Completed]: 'bg-green-100 text-[#28A745]',
-  [LabOrderStatus.Cancelled]: 'bg-red-100 text-[#DC3545]',
+  [LabOrderStatus.Ordered]: 'text-[#3B82F6]',
+  [LabOrderStatus.Collected]: 'text-[#8B5CF6]',
+  [LabOrderStatus.Processing]: 'text-[#FFC107]',
+  [LabOrderStatus.Completed]: 'text-[#28A745]',
+  [LabOrderStatus.Cancelled]: 'text-[#DC3545]',
 };
 
 export function LabTests() {
@@ -130,15 +130,21 @@ function LabCatalogView() {
           { key: 'category', header: 'Category' },
           { key: 'price', header: 'Price', render: (t: LabTest) => formatCurrency(t.price) },
           { key: 'status', header: 'Status', render: (t: LabTest) => (
-            <span className={`text-xs px-2 py-0.5 rounded-full ${t.isActive ? 'bg-green-100 text-[#28A745]' : 'bg-gray-100 text-[#6C757D]'}`}>
+            <span className={`text-xs font-semibold ${t.isActive ? 'text-[#28A745]' : 'text-[#6C757D]'}`}>
               {t.isActive ? 'Active' : 'Inactive'}
             </span>
           )},
-          { key: 'actions', header: '', render: (t: LabTest) => (
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => openEdit(t)} className="text-xs text-[#3B82F6]">Edit</button>
-              <button onClick={() => handleToggle(t)} className="text-xs text-[#6C757D]">{t.isActive ? 'Deactivate' : 'Activate'}</button>
-              <button onClick={() => handleDelete(t)} className="text-xs text-[#DC3545]">Delete</button>
+          { key: 'actions', header: 'Actions', render: (t: LabTest) => (
+            <div className="flex gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+              <button onClick={() => openEdit(t)} className="p-1.5 rounded hover:bg-[#E9ECEF]" title="Edit">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#3B82F6]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button onClick={() => handleToggle(t)} className="p-1.5 rounded hover:bg-[#E9ECEF]" title={t.isActive ? 'Deactivate' : 'Activate'}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#6C757D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="3" width="15" height="13"/><polyline points="16 8 20 8 23 11 23 16 16 16"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              </button>
+              <button onClick={() => handleDelete(t)} className="p-1.5 rounded hover:bg-[#E9ECEF]" title="Delete">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#DC3545]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
             </div>
           )},
         ]}
@@ -361,7 +367,7 @@ function LabOrdersView() {
           { key: 'doctorName', header: 'Ordered By' },
           { key: 'price', header: 'Price', render: (o: any) => formatCurrency(o.price) },
           { key: 'status', header: 'Status', render: (o: any) => (
-            <span className={`text-xs px-2 py-1 rounded-full ${statusColors[o.status as LabOrderStatus] || ''}`}>
+            <span className={`text-xs font-semibold ${statusColors[o.status as LabOrderStatus] || ''}`}>
               {statusLabels[o.status as LabOrderStatus] || o.status}
             </span>
           )},
@@ -383,7 +389,7 @@ function LabOrdersView() {
               <div><span className="text-[#6C757D]">Patient:</span> {selectedOrder.patientName}</div>
               <div><span className="text-[#6C757D]">Test:</span> {selectedOrder.testName}</div>
               <div><span className="text-[#6C757D]">Status:</span>
-                <span className={`ml-1 text-xs px-2 py-0.5 rounded-full ${statusColors[selectedOrder.status as LabOrderStatus] || ''}`}>
+                <span className={`ml-1 text-xs font-semibold ${statusColors[selectedOrder.status as LabOrderStatus] || ''}`}>
                   {statusLabels[selectedOrder.status as LabOrderStatus]}
                 </span>
               </div>

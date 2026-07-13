@@ -142,9 +142,9 @@ export function AvailabilityEditor({ availabilities }: any) {
 // Inventory
 
 export function StockAlertBadge({ currentStock, reorderLevel }: { currentStock: number; reorderLevel: number }) {
-  if (currentStock === 0) return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-[#DC3545]">Out of Stock</span>;
-  if (currentStock <= reorderLevel) return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-[#FFC107]">Low Stock</span>;
-  return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-[#28A745]">In Stock</span>;
+  if (currentStock === 0) return <span className="text-xs font-semibold text-[#DC3545]">Out of Stock</span>;
+  if (currentStock <= reorderLevel) return <span className="text-xs font-semibold text-[#FFC107]">Low Stock</span>;
+  return <span className="text-xs font-semibold text-[#28A745]">In Stock</span>;
 }
 
 // Billing

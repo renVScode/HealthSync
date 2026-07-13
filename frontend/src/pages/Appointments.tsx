@@ -118,8 +118,8 @@ export function Appointments() {
             )}
             <div>
               <label className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">Status</label>
-              <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full"
-                style={{ backgroundColor: STATUS_COLORS[selectedEvent.status.toString()] || '#17A2B8', color: '#fff' }}
+              <span className="text-xs font-semibold"
+                style={{ color: STATUS_COLORS[selectedEvent.status.toString()] || '#17A2B8' }}
               >
                 {STATUS_LABELS[selectedEvent.status.toString()] || 'Scheduled'}
               </span>

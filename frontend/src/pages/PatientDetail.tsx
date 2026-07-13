@@ -120,7 +120,7 @@ export function PatientDetail() {
                               <div key={px.id} className="flex items-center justify-between p-2 bg-[#F8F9FA] rounded mb-1">
                                 <span className="font-medium">{px.medicineName}</span>
                                 <span className="text-[#6C757D]">{px.dosage} - {px.frequency}{px.duration ? ` for ${px.duration}` : ''} ({px.quantity} {px.quantity > 1 ? 'units' : 'unit'})</span>
-                                <span className={`text-xs font-semibold px-2 py-0.5 rounded ${px.status === 'Completed' ? 'bg-[#D4EDDA] text-[#155724]' : px.status === 'Paid' ? 'bg-[#FFF3CD] text-[#856404]' : 'bg-[#E2E3E5] text-[#383D41]'}`}>
+                                <span className={`text-xs font-semibold ${px.status === 'Completed' ? 'text-[#155724]' : px.status === 'Paid' ? 'text-[#856404]' : 'text-[#383D41]'}`}>
                                   {px.status}
                                 </span>
                               </div>

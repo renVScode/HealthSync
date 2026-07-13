@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { DataTable } from '../components/common/DataTable';
+import { SearchBar } from '../components/common/SearchBar';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { authService } from '../services/authService';
 import { patientService } from '../services/patientService';
 import { useAuth } from '../contexts/auth-context';
+import { useDebounce } from '../hooks/useDebounce';
 import { PAGE_SIZE } from '../utils/constants';
 
 type Tab = 'users' | 'patients';
@@ -38,8 +40,8 @@ export function Archives() {
           ))}
         </div>
 
-        {activeTab === 'users' && <ArchivedUsers />}
-        {activeTab === 'patients' && <ArchivedPatients />}
+        {activeTab === 'users' && <ArchivedUsers key="users" />}
+        {activeTab === 'patients' && <ArchivedPatients key="patients" />}
       </Card>
     </div>
   );
@@ -48,17 +50,19 @@ export function Archives() {
 function ArchivedUsers() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search);
   const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const res = await authService.getAllUsers(1, 100, undefined, true);
+    const res = await authService.getAllUsers(1, 100, debouncedSearch || undefined, true);
     const data = res.data;
     setItems(data?.items || data || []);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [debouncedSearch]);
 
   const columns = [
     { key: 'firstName', header: 'First Name' },
@@ -77,6 +81,9 @@ function ArchivedUsers() {
 
   return (
     <>
+      <div className="mb-4">
+        <SearchBar value={search} onChange={(v) => setSearch(v)} placeholder="Search by name, email, or role..." />
+      </div>
       <DataTable columns={columns} data={items} isLoading={loading} />
       <ConfirmDialog
         isOpen={!!confirmAction}
@@ -95,18 +102,20 @@ function ArchivedPatients() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search);
   const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const res = await patientService.getAll(page, PAGE_SIZE, undefined, true);
+    const res = await patientService.getAll(page, PAGE_SIZE, debouncedSearch || undefined, true);
     const data = res.data;
     if (Array.isArray(data)) { setItems(data); setTotal(0); }
     else if (data?.items) { setItems(data.items); setTotal(data.totalCount); }
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [page]);
+  useEffect(() => { load(); }, [page, debouncedSearch]);
 
   const columns = [
     { key: 'name', header: 'Name', render: (p: any) => `${p.firstName} ${p.lastName}` },
@@ -124,6 +133,9 @@ function ArchivedPatients() {
 
   return (
     <>
+      <div className="mb-4">
+        <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by name or phone..." />
+      </div>
       <DataTable
         columns={columns}
         data={items}
@@ -143,5 +155,3 @@ function ArchivedPatients() {
     </>
   );
 }
-
-

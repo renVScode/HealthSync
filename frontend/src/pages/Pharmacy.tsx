@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { DataTable } from '../components/common/DataTable';
+import { SearchBar } from '../components/common/SearchBar';
 import { Modal } from '../components/common/Modal';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { prescriptionService } from '../services/prescriptionService';
 import { inventoryService } from '../services/inventoryService';
+import { useDebounce } from '../hooks/useDebounce';
 import { formatDate } from '../utils/formatters';
 import { printHtml } from '../utils/printUtils';
 import { PAGE_SIZE } from '../utils/constants';
@@ -14,6 +16,8 @@ export function Pharmacy() {
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search);
   const [selected, setSelected] = useState<any>(null);
   const [batches, setBatches] = useState<any[]>([]);
   const [selectedBatch, setSelectedBatch] = useState('');
@@ -29,12 +33,12 @@ export function Pharmacy() {
   const [restockError, setRestockError] = useState<string | null>(null);
 
   const load = async () => {
-    const res = await prescriptionService.getPharmacyQueue(page, PAGE_SIZE);
+    const res = await prescriptionService.getPharmacyQueue(page, PAGE_SIZE, debouncedSearch || undefined);
     setPrescriptions(res.data.items);
     setTotal(res.data.totalCount);
   };
 
-  useEffect(() => { load(); }, [page]);
+  useEffect(() => { load(); }, [page, debouncedSearch]);
 
   useEffect(() => {
     inventoryService.getLowStock().then((r) => setLowStock(r.data));
@@ -216,7 +220,9 @@ export function Pharmacy() {
       )}
 
       <Card title="Pharmacy - Dispensation Queue">
-        <p className="text-sm text-[#6C757D] mb-4">Paid prescriptions awaiting dispensation</p>
+        <div className="mb-4">
+          <SearchBar value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search by medicine name, patient, or status..." />
+        </div>
         <DataTable
           columns={[
             { key: 'medicineName', header: 'Medicine' },
@@ -224,7 +230,7 @@ export function Pharmacy() {
             { key: 'frequency', header: 'Frequency' },
             { key: 'quantity', header: 'Qty' },
             { key: 'status', header: 'Status', render: (px: any) => (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded bg-[#FFF3CD] text-[#856404]">{px.status}</span>
+              <span className="text-xs font-semibold text-[#856404]">{px.status}</span>
             )},
           ]}
           data={prescriptions}

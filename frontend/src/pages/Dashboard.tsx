@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { reportService } from '../services/reportService';
 import { useAuth } from '../contexts/auth-context';
 import { formatCurrency } from '../utils/formatters';
+import { Button } from '../components/common/Button';
 
 interface StatCardProps {
   title: string;
@@ -106,20 +107,30 @@ export function Dashboard() {
   const { user, hasRole } = useAuth();
   const [stats, setStats] = useState<any>(null);
   const [doctorPerf, setDoctorPerf] = useState<any[]>([]);
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [appliedFrom, setAppliedFrom] = useState('');
+  const [appliedTo, setAppliedTo] = useState('');
+
+  const loadStats = useCallback(async (f: string, t: string) => {
+    try {
+      const summary = await reportService.getAppointmentSummary(f || undefined, t || undefined);
+      const revenue = hasRole('Admin') || hasRole('Receptionist') || hasRole('Doctor') ? await reportService.getRevenue(f || undefined, t || undefined) : null;
+      const inventory = hasRole('Pharmacist') ? await reportService.getInventorySummary() : null;
+      const perf = hasRole('Admin') ? await reportService.getDoctorPerformance(f || undefined, t || undefined) : null;
+      setStats({ summary: summary.data, revenue: revenue?.data, inventory: inventory?.data, perf: perf?.data });
+      if (perf?.data) setDoctorPerf(perf.data);
+    } catch { /* ignore */ }
+  }, [hasRole]);
 
   useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const summary = await reportService.getAppointmentSummary();
-        const revenue = hasRole('Admin') || hasRole('Receptionist') || hasRole('Doctor') ? await reportService.getRevenue() : null;
-        const inventory = hasRole('Pharmacist') ? await reportService.getInventorySummary() : null;
-        const perf = hasRole('Admin') ? await reportService.getDoctorPerformance() : null;
-        setStats({ summary: summary.data, revenue: revenue?.data, inventory: inventory?.data, perf: perf?.data });
-        if (perf?.data) setDoctorPerf(perf.data);
-      } catch { /* ignore */ }
-    };
-    loadStats();
-  }, []);
+    loadStats(appliedFrom, appliedTo);
+  }, [loadStats, appliedFrom, appliedTo]);
+
+  const handleApply = () => {
+    setAppliedFrom(from);
+    setAppliedTo(to);
+  };
 
   const topAppointed = [...doctorPerf].sort((a, b) => b.appointmentsCompleted - a.appointmentsCompleted)[0];
   const topRevenue = [...doctorPerf].sort((a, b) => b.revenueGenerated - a.revenueGenerated)[0];
@@ -143,6 +154,20 @@ export function Dashboard() {
           Welcome, {user?.firstName}!
         </h1>
         <p className="text-sm text-[#6C757D] mt-1">Here's what's happening at your clinic today.</p>
+      </div>
+
+      <div className="flex items-end gap-3 mb-6 flex-wrap">
+        <div>
+          <label className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">From</label>
+          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
+            className="px-3 py-1.5 border border-[#CED4DA] rounded text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">To</label>
+          <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
+            className="px-3 py-1.5 border border-[#CED4DA] rounded text-sm" />
+        </div>
+        <Button size="sm" onClick={handleApply}>Apply</Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">

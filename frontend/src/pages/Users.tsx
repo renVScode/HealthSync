@@ -109,7 +109,7 @@ export function Users() {
     { key: 'isActive', header: 'Active', render: (u: any) => (
       <button
         onClick={(e) => { e.stopPropagation(); authService.toggleActivation(u.id, !u.isActive).then(loadUsers); }}
-        className={`text-xs px-2 py-0.5 rounded font-semibold ${u.isActive ? 'bg-[#D4EDDA] text-[#155724] hover:bg-[#C3E6CB]' : 'bg-[#F8D7DA] text-[#721C24] hover:bg-[#F5C6CB]'}`}
+        className={`text-xs font-semibold ${u.isActive ? 'text-[#155724]' : 'text-[#721C24]'}`}
       >
         {u.isActive ? 'Active' : 'Inactive'}
       </button>

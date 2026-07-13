@@ -370,7 +370,7 @@ export function MedicalRecords() {
                 <div><span className="text-[#6C757D]">Doctor:</span> <span className="font-medium">{selectedRecord.doctorName}</span></div>
                 <div><span className="text-[#6C757D]">Date:</span> <span className="font-medium">{formatDate(selectedRecord.createdAt)}</span></div>
                 <div>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded ${selectedRecord.isCompleted ? 'bg-[#D4EDDA] text-[#155724]' : 'bg-[#FFF3CD] text-[#856404]'}`}>
+                  <span className={`text-xs font-semibold ${selectedRecord.isCompleted ? 'text-[#155724]' : 'text-[#856404]'}`}>
                     {selectedRecord.isCompleted ? 'Completed' : 'Pending'}
                   </span>
                 </div>
@@ -406,9 +406,9 @@ export function MedicalRecords() {
                     <span className="font-medium">{px.medicineName}</span>
                     <span className="text-[#6C757D]">{px.dosage} - {px.frequency}{px.duration ? ` for ${px.duration}` : ''} ({px.quantity} {px.quantity > 1 ? 'units' : 'unit'})</span>
                     <div className="flex items-center gap-2">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded ${px.status === 'Completed' ? 'bg-[#D4EDDA] text-[#155724]' :
-                        px.status === 'Paid' ? 'bg-[#FFF3CD] text-[#856404]' :
-                          'bg-[#E2E3E5] text-[#383D41]'
+                      <span className={`text-xs font-semibold ${px.status === 'Completed' ? 'text-[#155724]' :
+                        px.status === 'Paid' ? 'text-[#856404]' :
+                          'text-[#383D41]'
                         }`}>{px.status}</span>
                       {px.status === 'Pending' && hasRole('Receptionist') && (
                         <button onClick={handleMarkPaid} className="text-xs px-2 py-0.5 rounded bg-[#2C7DA0] text-white hover:bg-[#1A5A7A]">
