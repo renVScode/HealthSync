@@ -132,6 +132,13 @@ export function Dashboard() {
     setAppliedTo(to);
   };
 
+  const handleReset = () => {
+    setFrom('');
+    setTo('');
+    setAppliedFrom('');
+    setAppliedTo('');
+  };
+
   const topAppointed = [...doctorPerf].sort((a, b) => b.appointmentsCompleted - a.appointmentsCompleted)[0];
   const topRevenue = [...doctorPerf].sort((a, b) => b.revenueGenerated - a.revenueGenerated)[0];
 
@@ -168,6 +175,12 @@ export function Dashboard() {
             className="px-3 py-1.5 border border-[#CED4DA] rounded text-sm" />
         </div>
         <Button size="sm" onClick={handleApply}>Apply</Button>
+        <button onClick={handleReset} className="p-2 border border-[#CED4DA] rounded hover:bg-[#F0F4F8]" title="Reset date filter">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#6C757D]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="1 4 1 10 7 10" />
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+          </svg>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
