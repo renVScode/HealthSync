@@ -163,7 +163,7 @@ export function Dashboard() {
         <p className="text-sm text-[#6C757D] mt-1">Here's what's happening at your clinic today.</p>
       </div>
 
-      <div className="flex items-end gap-3 mb-6 flex-wrap">
+      <div className="flex items-end justify-end gap-3 mb-6 flex-wrap">
         <div>
           <label className="block text-xs font-semibold text-[#6C757D] uppercase tracking-wider mb-1">From</label>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
