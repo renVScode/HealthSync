@@ -21,15 +21,19 @@ A full-stack clinic management platform built with Clean Architecture. Handles p
 - **Appointment scheduling** — 15-minute slots, availability rules, time-off blocking, status lifecycle. Month-only calendar with styled event cards; click an event for a detail modal showing patient, time, reason, and status.
 - **Patient management** — Full CRUD with search, medical history timeline (collapsible), allergies, emergency contacts
 - **Electronic Medical Records** — Diagnoses, prescriptions, treatment plans, confidentiality flags
-- **Pharmacy inventory** — Batch tracking with expiry dates, stock movements (stock-in, dispensing, adjustments), reorder alerts
+- **Pharmacy inventory** — Batch tracking with expiry dates, stock movements (stock-in, dispensing, adjustments), reorder alerts. Queue view with search.
 - **Billing & payments** — Invoicing with line items, multi-payment support (Cash/Card/Online/Insurance), partial payments, conditional per-method fields (Card — cardholder/last4/approval code; Online — gateway/reference; Insurance — provider/policy/auth/coverage)
-- **Reporting** — Aggregated analytics across appointments, revenue, inventory
-- **Archive & restore** — Soft-delete users, patients, and medical records; view and restore them from a dedicated Archives page. Archived users are automatically set inactive.
+- **Reporting** — Aggregated analytics across appointments, revenue, inventory with date range filtering
+- **Archive & restore** — Soft-delete users, patients, and medical records; view and restore them from a dedicated Archives page with search. Archived users are automatically set inactive.
 - **Custom confirmation dialogs** — A reusable `ConfirmDialog` modal component replaces native `window.confirm()` across all destructive actions.
 - **Doctor service offerings** — Per-doctor service catalog (ECG, wound dressing, etc.) with pricing, active/inactive toggle. Managed via a dedicated Services tab on DoctorDetail.
 - **Lab tests module** — Catalog of lab tests with prices (Admin-managed), test ordering by Doctors, status lifecycle (Ordered→Collected→Processing→Completed), result entry with reference ranges
 - **Real-time updates** — Live appointment changes and push notifications via SignalR
 - **Audit logging** — All create/update/delete operations tracked with JSON snapshots
+- **Search across all tables** — Debounced search on Patients, Users, Appointments, Pharmacy, Archives, Lab Tests, and more
+- **Icon-based action buttons** — Tables use icon buttons (edit, delete, toggle, archive, restore) instead of text labels for compact, clean UI
+- **Responsive sidebar** — Slides off-screen on mobile with hamburger toggle + overlay
+- **Dashboard date filter** — From/To date inputs with Apply and Reset to filter KPIs and charts
 - **Docker support** — One-command deployment, no local tool conflicts
 
 ## Architecture
@@ -80,6 +84,18 @@ Users ──1:0..1── Patients
 Users ──1:0..1── Doctors
 ```
 *All entities use `Guid` primary keys with `gen_random_uuid()`.*
+
+## Live Deployment (Render)
+
+The app is deployed and accessible at:
+
+| Service | URL |
+|---|---|
+| Frontend | https://healthsync-frontend-oc2s.onrender.com |
+| API | https://healthsync-y27c.onrender.com |
+| Swagger | https://healthsync-y27c.onrender.com/swagger |
+
+The frontend uses **HashRouter** (`/#/path` URLs) for SPA routing — no server-side rewrites required.
 
 ## Getting Started
 
