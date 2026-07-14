@@ -188,7 +188,7 @@ public class MedicalRecordsController : ControllerBase
                     {
                         Amount = billing.Total,
                         PaymentMethod = PaymentMethod.Cash
-                    });
+                    }, Guid.Parse(userId!));
                 }
             }
         }

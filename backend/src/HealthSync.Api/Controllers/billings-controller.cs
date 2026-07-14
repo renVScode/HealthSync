@@ -73,7 +73,8 @@ public class BillingsController : ControllerBase
     public async Task<IActionResult> AddPayment(Guid id, [FromBody] CreatePaymentDto dto)
     {
         var oldBilling = await _billingService.GetByIdAsync(id);
-        var result = await _billingService.AddPaymentAsync(id, dto);
+        var receivedById = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await _billingService.AddPaymentAsync(id, dto, receivedById);
         if (!result) return BadRequest(new { message = "Invoice already fully paid or cancelled" });
 
         await _auditService.LogAsync("add-payment", "billing", id,

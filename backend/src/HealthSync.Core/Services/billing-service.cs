@@ -180,7 +180,7 @@ public class BillingService : IBillingService
         return billing;
     }
 
-    public async Task<bool> AddPaymentAsync(Guid billingId, CreatePaymentDto dto)
+    public async Task<bool> AddPaymentAsync(Guid billingId, CreatePaymentDto dto, Guid receivedById)
     {
         var billing = await _uow.Billings.Query()
             .Include(b => b.Payments)
@@ -199,6 +199,7 @@ public class BillingService : IBillingService
             QrCodeImageUrl = dto.QrCodeImageUrl,
             PaymentDetails = dto.PaymentDetails,
             IsVerified = !hasQr,
+            ReceivedById = receivedById,
             Notes = dto.Notes
         };
 
