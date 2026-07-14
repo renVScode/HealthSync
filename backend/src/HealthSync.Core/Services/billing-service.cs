@@ -76,7 +76,7 @@ public class BillingService : IBillingService
         return billing == null ? null : MapToDto(billing);
     }
 
-    public async Task<BillingResponseDto> CreateAsync(CreateBillingDto dto)
+    public async Task<BillingResponseDto> CreateAsync(CreateBillingDto dto, Guid createdById)
     {
         var subTotal = dto.Items.Sum(i => i.Quantity * i.UnitPrice);
         var total = subTotal - dto.Discount + dto.Tax;
@@ -85,6 +85,7 @@ public class BillingService : IBillingService
         {
             PatientId = dto.PatientId,
             AppointmentId = dto.AppointmentId,
+            CreatedById = createdById,
             InvoiceNumber = await GenerateInvoiceNumberAsync(),
             SubTotal = subTotal,
             Discount = dto.Discount,
@@ -158,7 +159,7 @@ public class BillingService : IBillingService
             Items = items
         };
 
-        var billing = await CreateAsync(createDto);
+        var billing = await CreateAsync(createDto, Guid.Parse(userId));
 
         if (string.IsNullOrEmpty(appointment.Token))
         {

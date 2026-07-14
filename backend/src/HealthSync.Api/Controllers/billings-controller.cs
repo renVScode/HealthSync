@@ -42,7 +42,8 @@ public class BillingsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateBillingDto dto)
     {
-        var result = await _billingService.CreateAsync(dto);
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await _billingService.CreateAsync(dto, userId);
 
         await _auditService.LogAsync("create", "billing", result.Id, null,
             JsonSerializer.Serialize(result),
