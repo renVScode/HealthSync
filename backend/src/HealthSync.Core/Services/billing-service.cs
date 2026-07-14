@@ -108,6 +108,7 @@ public class BillingService : IBillingService
         billing = await _uow.Billings.Query()
             .Include(b => b.Patient)
             .Include(b => b.Items)
+            .Include(b => b.Payments)
             .FirstAsync(b => b.Id == billing.Id);
 
         return MapToDto(billing);
