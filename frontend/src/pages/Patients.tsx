@@ -62,24 +62,22 @@ export function Patients() {
     { key: 'age', header: 'Age', render: (p: any) => getAge(p.dateOfBirth) },
     { key: 'bloodType', header: 'Blood Type' },
     { key: 'createdAt', header: 'Registered', render: (p: any) => formatDate(p.createdAt) },
-    { key: 'actions', header: 'Actions', render: (p: any) => (
-      canArchive && (
-        <button
-          onClick={(e: React.MouseEvent) => {
-            e.stopPropagation();
-            setConfirmAction(() => async () => {
-              await patientService.archive(p.id);
-              const res = await patientService.getAll(page, PAGE_SIZE, debouncedSearch, false);
-              setPatients(res.data.items);
-              setTotal(res.data.totalCount);
-            });
-          }}
-          className="p-1.5 rounded bg-[#FFC107] text-black hover:bg-[#E0A800]" title="Archive"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" /></svg>
-        </button>
-      )
-    )},
+    ...(canArchive ? [{ key: 'actions', header: 'Actions', render: (p: any) => (
+      <button
+        onClick={(e: React.MouseEvent) => {
+          e.stopPropagation();
+          setConfirmAction(() => async () => {
+            await patientService.archive(p.id);
+            const res = await patientService.getAll(page, PAGE_SIZE, debouncedSearch, false);
+            setPatients(res.data.items);
+            setTotal(res.data.totalCount);
+          });
+        }}
+        className="p-1.5 rounded bg-[#FFC107] text-black hover:bg-[#E0A800]" title="Archive"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="21 8 21 21 3 21 3 8" /><rect x="1" y="3" width="22" height="5" /><line x1="10" y1="12" x2="14" y2="12" /></svg>
+      </button>
+    ) }] : []),
   ];
 
   return (
