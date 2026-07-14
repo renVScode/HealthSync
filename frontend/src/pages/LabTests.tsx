@@ -6,6 +6,7 @@ import { SearchBar } from '../components/common/SearchBar';
 import { Modal } from '../components/common/Modal';
 
 import { labTestService } from '../services/labTestService';
+import { doctorService } from '../services/doctorService';
 import { billingService } from '../services/billingService';
 import { useAuth } from '../contexts/auth-context';
 import { useDebounce } from '../hooks/useDebounce';
@@ -191,7 +192,8 @@ function LabOrdersView() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   const [tests, setTests] = useState<any[]>([]);
-  const [createForm, setCreateForm] = useState({ patientId: '', labTestId: '', notes: '' });
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [createForm, setCreateForm] = useState({ patientId: '', labTestId: '', notes: '', doctorId: '' });
   const [resultForm, setResultForm] = useState({ result: '', resultSummary: '', referenceRange: '', status: '' });
   const [loading, setLoading] = useState(false);
 
@@ -215,6 +217,7 @@ function LabOrdersView() {
   useEffect(() => {
     if (showCreate) {
       labTestService.getAll().then((r) => setTests(r.data));
+      doctorService.getAll().then((r) => setDoctors(r.data?.items || r.data || []));
     }
   }, [showCreate]);
 
@@ -223,7 +226,7 @@ function LabOrdersView() {
     try {
       await labTestService.createOrder(createForm);
       setShowCreate(false);
-      setCreateForm({ patientId: '', labTestId: '', notes: '' });
+      setCreateForm({ patientId: '', labTestId: '', notes: '', doctorId: '' });
       await loadOrders();
     } finally { setLoading(false); }
   };
@@ -332,6 +335,18 @@ function LabOrdersView() {
                 ))}
               </select>
             </div>
+            {hasRole('Admin') && (
+              <div>
+                <label className="block text-xs font-medium mb-1">Doctor</label>
+                <select value={createForm.doctorId} onChange={(e) => setCreateForm({...createForm, doctorId: e.target.value})}
+                  className="w-full px-3 py-1.5 border rounded text-sm">
+                  <option value="">Select doctor...</option>
+                  {doctors.map((d: any) => (
+                    <option key={d.id} value={d.id}>{d.firstName} {d.lastName}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="col-span-2">
               <label className="block text-xs font-medium mb-1">Notes</label>
               <input value={createForm.notes} onChange={(e) => setCreateForm({...createForm, notes: e.target.value})}
@@ -339,7 +354,7 @@ function LabOrdersView() {
             </div>
           </div>
           <div className="flex justify-end">
-            <Button size="sm" onClick={handleCreateOrder} disabled={!createForm.patientId || !createForm.labTestId} isLoading={loading}>
+            <Button size="sm" onClick={handleCreateOrder} disabled={!createForm.patientId || !createForm.labTestId || (hasRole('Admin') && !createForm.doctorId)} isLoading={loading}>
               Create Order
             </Button>
           </div>
