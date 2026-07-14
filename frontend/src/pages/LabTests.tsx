@@ -292,12 +292,12 @@ function LabOrdersView() {
     setBillingSubmitting(true);
     setBillingError('');
     try {
-      await labTestService.updateOrder(billingOrder.id, { status: LabOrderStatus.Completed });
       const res = await billingService.create({
         patientId: billingOrder.patientId,
         items: [{ description: billingOrder.testName, quantity: 1, unitPrice: billingOrder.price }],
       });
       await billingService.addPayment(res.data.id, { amount: res.data.total, paymentMethod: billingPaymentMethod });
+      await labTestService.updateOrder(billingOrder.id, { status: LabOrderStatus.Completed });
       setShowBillingModal(false);
       setBillingOrder(null);
       setSelectedOrder(null);
