@@ -99,7 +99,7 @@ function ArchivedUsers() {
 
 function ArchivedPatients() {
   const { hasRole } = useAuth();
-  const canRestore = hasRole('Admin') || hasRole('Receptionist');
+  const canRestore = hasRole('Admin') || hasRole('Receptionist') || hasRole('Doctor');
   const [items, setItems] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);

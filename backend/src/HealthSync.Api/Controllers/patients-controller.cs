@@ -77,7 +77,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/archive")]
-    [Authorize(Roles = "Admin,Receptionist")]
+    [Authorize(Roles = "Admin,Receptionist,Doctor")]
     public async Task<IActionResult> Archive(Guid id)
     {
         var oldPatient = await _patientService.GetByIdAsync(id);
@@ -94,7 +94,7 @@ public class PatientsController : ControllerBase
     }
 
     [HttpPatch("{id:guid}/restore")]
-    [Authorize(Roles = "Admin,Receptionist")]
+    [Authorize(Roles = "Admin,Receptionist,Doctor")]
     public async Task<IActionResult> Restore(Guid id)
     {
         var result = await _patientService.RestoreAsync(id);

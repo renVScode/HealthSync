@@ -27,7 +27,7 @@ export function Patients() {
   const debouncedSearch = useDebounce(search);
 
   const canEdit = hasRole('Receptionist');
-  const canArchive = hasRole('Admin') || hasRole('Receptionist');
+  const canArchive = hasRole('Admin') || hasRole('Receptionist') || hasRole('Doctor');
   const isDoctor = user?.role === 'Doctor';
 
   useEffect(() => {
