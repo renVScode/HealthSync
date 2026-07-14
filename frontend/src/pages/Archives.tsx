@@ -98,6 +98,8 @@ function ArchivedUsers() {
 }
 
 function ArchivedPatients() {
+  const { hasRole } = useAuth();
+  const canRestore = hasRole('Admin') || hasRole('Receptionist');
   const [items, setItems] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -122,12 +124,14 @@ function ArchivedPatients() {
     { key: 'phone', header: 'Phone' },
     { key: 'gender', header: 'Gender' },
     { key: 'actions', header: 'Actions', render: (p: any) => (
-      <button
-        onClick={() => setConfirmAction(() => async () => { await patientService.restore(p.id); await load(); })}
-        className="p-1.5 rounded bg-[#28A745] text-white hover:bg-[#1E7E34]" title="Restore"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></svg>
-      </button>
+      canRestore && (
+        <button
+          onClick={() => setConfirmAction(() => async () => { await patientService.restore(p.id); await load(); })}
+          className="p-1.5 rounded bg-[#28A745] text-white hover:bg-[#1E7E34]" title="Restore"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" /></svg>
+        </button>
+      )
     )},
   ];
 
